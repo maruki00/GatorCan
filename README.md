@@ -1,2 +1,2 @@
-# EduGator
-EduGator : E-Learning Platform
+# GatorCan
+GatorCan : E-Learning Platform
