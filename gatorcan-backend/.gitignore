@@ -1,4 +1,2 @@
 .env
-go.mod
 go.sum
-gatorcan-frontend/*
