@@ -10,12 +10,6 @@ import (
 
 func main() {
 
-	//uncomment this block to generate a token for the admin user
-	// if len(os.Args) > 1 && os.Args[1] == "gen-token" {
-	// 	utils.GenerateadminToken()
-	// 	return
-	// }
-
 	database.Connect()
 
 	database.DB.AutoMigrate(&models.User{})
