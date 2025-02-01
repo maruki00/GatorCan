@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"fmt"
-	//"gatorcan-backend/database"
+	"gatorcan-backend/database"
 	"gatorcan-backend/middleware"
 	"gatorcan-backend/models"
+	"gatorcan-backend/repositories"
 	"gatorcan-backend/utils"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -66,10 +66,10 @@ func CreateUser(c *gin.Context) {
 		Roles:    user.Roles,
 	}
 
-	// if err := database.DB.Create(&newUser).Error; err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-	// 	return
-	// }
+	if err := database.DB.Create(&newUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
 
 	fmt.Printf("User %s has been created with email %s\n", newUser.Username, newUser.Email)
 
@@ -91,25 +91,23 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// For demonstration purposes, we'll use a hardcoded username and hashed password
-	dbUsername := "admin"
-	dbPasswordHash, _ := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
-	dbRoles := []string{"admin", "instructor"}
+	// get user from the database
+	user, err := repositories.NewUserRepository().GetUserByUsername(loginData.Username)
 
-	// Check if the username matches
-	if dbUsername != loginData.Username {
+	// Check if the user exists
+	if user == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid username or password"})
 		return
 	}
 
 	// Check if the password matches
-	if err := bcrypt.CompareHashAndPassword(dbPasswordHash, []byte(loginData.Password)); err != nil {
+	if err := utils.VerifyPassword(user.Password, loginData.Password); !err {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid username or password"})
 		return
 	}
 
 	// Generate JWT token
-	token, err := utils.GenerateToken(loginData.Username, dbRoles)
+	token, err := utils.GenerateToken(loginData.Username, user.Roles)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
