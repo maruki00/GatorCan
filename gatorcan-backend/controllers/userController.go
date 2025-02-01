@@ -5,6 +5,7 @@ import (
 	"gatorcan-backend/database"
 	"gatorcan-backend/middleware"
 	"gatorcan-backend/models"
+	"gatorcan-backend/repositories"
 	"gatorcan-backend/utils"
 	"net/http"
 
@@ -12,10 +13,10 @@ import (
 )
 
 type UserRequest struct {
-	Username string `json:"username" form:"username"`
-	Email    string `json:"email" form:"email"`
-	Password string `json:"password" form:"password"`
-	Role     string `json:"role" form:"role"`
+	Username string   `json:"username" form:"username"`
+	Email    string   `json:"email" form:"email"`
+	Password string   `json:"password" form:"password"`
+	Roles    []string `json:"roles" form:"roles"`
 }
 
 func CreateUser(c *gin.Context) {
@@ -24,8 +25,19 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	role, exists := c.Get("role")
-	if !exists || role.(string) != "admin" {
+	roles, exists := c.Get("roles")
+	if !exists {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: No roles found"})
+		return
+	}
+
+	rolesSlice, ok := roles.([]string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid roles format"})
+		return
+	}
+
+	if !hasRole(rolesSlice, "admin") {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: Only admins can register users"})
 		return
 	}
@@ -36,7 +48,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	if user.Username == "" || user.Email == "" || user.Password == "" || user.Role == "" {
+	if user.Username == "" || user.Email == "" || user.Password == "" || user.Roles == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing username, email, password or role"})
 		return
 	}
@@ -51,7 +63,7 @@ func CreateUser(c *gin.Context) {
 		Username: user.Username,
 		Email:    user.Email,
 		Password: hashedPassword,
-		Role:     user.Role,
+		Roles:    user.Roles,
 	}
 
 	if err := database.DB.Create(&newUser).Error; err != nil {
@@ -64,4 +76,54 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": fmt.Sprintf("User %s has been created successfully", newUser.Username),
 	})
+}
+
+// Handler function for the login route
+func Login(c *gin.Context) {
+	var loginData struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	// Bind JSON data to loginData struct
+	if err := c.ShouldBindJSON(&loginData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// get user from the database
+	user, err := repositories.NewUserRepository().GetUserByUsername(loginData.Username)
+
+	// Check if the user exists
+	if user == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid username or password"})
+		return
+	}
+
+	// Check if the password matches
+	if err := utils.VerifyPassword(user.Password, loginData.Password); !err {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid username or password"})
+		return
+	}
+
+	// Generate JWT token
+	token, err := utils.GenerateToken(loginData.Username, user.Roles)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	// The token should be set as authorization header
+	c.Writer.Header().Set("Authorization", "Bearer "+token)
+	// Return the token
+	c.JSON(http.StatusOK, gin.H{"token": "generated"})
+}
+
+func hasRole(roles []string, role string) bool {
+	for _, r := range roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
 }

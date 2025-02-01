@@ -10,18 +10,19 @@ import (
 var jwtSecret = []byte("nahidwin")
 
 type Claims struct {
-	Username string `json:"username"`
-	Role     string `json:"role"`
+	Username string   `json:"username"`
+	Roles    []string `json:"roles"` // One user can have multiple roles
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(username, role string) (string, error) {
+func GenerateToken(username string, roles []string) (string, error) {
 	claims := Claims{
 		Username: username,
-		Role:     role,
+		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Token expires in 24 hours
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "GatorCan", // The issuer of the token
 		},
 	}
 

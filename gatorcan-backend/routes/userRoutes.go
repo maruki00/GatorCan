@@ -7,10 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterUserRoutes(router *gin.Engine) {
-	userGroup := router.Group("/users")
+func UserRoutes(router *gin.Engine) {
+	router.POST("/login", controllers.Login)
+	userGroup := router.Group("/user")
 	userGroup.Use(middleware.AuthMiddleware())
 	{
-		userGroup.POST("", controllers.CreateUser)
+		userGroup.POST("/add_user", controllers.CreateUser)
 	}
 }
