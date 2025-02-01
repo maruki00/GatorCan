@@ -1,19 +1,32 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
+
+	"gatorcan-backend/database"
+	"gatorcan-backend/models"
+	"gatorcan-backend/routes"
+	"gatorcan-backend/utils"
 )
 
 func main() {
-	r := gin.Default()
 
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "Welcome to GatorCan Backend!"})
-	})
+	if len(os.Args) > 1 && os.Args[1] == "gen-token" {
+		utils.GenerateadminToken()
+		return
+	}
 
-	fmt.Println("Server is running on port 8080")
-	r.Run(":8080") // Start the server on port 8080
+	database.Connect()
+
+	database.DB.AutoMigrate(&models.User{})
+
+	// Set up router
+	router := gin.Default()
+
+	// Register routes
+	routes.RegisterUserRoutes(router)
+
+	router.Run(":8080")
 }
