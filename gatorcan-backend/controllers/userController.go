@@ -53,6 +53,17 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	var existingUser models.User
+	if err := database.DB.Where("username = ? OR email = ?", user.Username, user.Email).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User already exists"})
+		return
+	}
+
+	if !utils.IsValidEmail(user.Email) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
+		return
+	}
+
 	hashedPassword, err := utils.HashPassword(user.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
@@ -117,6 +128,12 @@ func Login(c *gin.Context) {
 	c.Writer.Header().Set("Authorization", "Bearer "+token)
 	// Return the token
 	c.JSON(http.StatusOK, gin.H{"token": "generated"})
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"token":   token,
+	})
+
 }
 
 func hasRole(roles []string, role string) bool {
