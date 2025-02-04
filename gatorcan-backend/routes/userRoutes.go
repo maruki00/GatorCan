@@ -13,5 +13,6 @@ func UserRoutes(router *gin.Engine) {
 	userGroup.Use(middleware.AuthMiddleware())
 	{
 		userGroup.POST("/add_user", controllers.CreateUser)
+		userGroup.GET("/:username", controllers.GetUserDetails)
 	}
 }
