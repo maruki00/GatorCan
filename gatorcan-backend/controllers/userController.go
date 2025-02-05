@@ -164,3 +164,133 @@ func GetUserDetails(c *gin.Context) {
 		"created_at": user.CreatedAt,
 	})
 }
+
+func DeleteUser(c *gin.Context) {
+	// Extract the username from the URL parameter
+	username := c.Param("username")
+
+	// Check for admin roles (optional, if only admin should delete users)
+	roles, exists := c.Get("roles")
+	if !exists {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: No roles found"})
+		return
+	}
+
+	rolesSlice, ok := roles.([]string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid roles format"})
+		return
+	}
+
+	if !hasRole(rolesSlice, "admin") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: Only admins can delete users"})
+		return
+	}
+
+	// Query the database to find the user by username
+	var user models.User
+	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
+		// If no user is found, return a "user not found" message
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Delete the user from the database
+	if err := database.DB.Delete(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
+		return
+	}
+
+	// Respond with a success message
+	c.JSON(http.StatusOK, gin.H{
+		"message": fmt.Sprintf("User %s has been deleted successfully", username),
+	})
+}
+
+func UpdateUser(c *gin.Context) {
+	var request struct {
+		OldPassword string `json:"old_password" binding:"required"`
+		NewPassword string `json:"new_password" binding:"required,min=8"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	// Get username from JWT token
+	username, exists := c.Get("username")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Fetch user from DB
+	var user models.User
+	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Verify old password
+	if !utils.VerifyPassword(user.Password, request.OldPassword) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect old password"})
+		return
+	}
+
+	// Hash the new password
+	hashedPassword, _ := utils.HashPassword(request.NewPassword)
+	user.Password = hashedPassword
+
+	// Save updated password
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
+}
+
+func UpdateRoles(c *gin.Context) {
+	var request struct {
+		Username string   `json:"username" binding:"required"`
+		Roles    []string `json:"roles" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	// Check if the requester is an admin
+	roles, _ := c.Get("roles") // Get user roles from JWT
+	userRoles := roles.([]string)
+	isAdmin := false
+	for _, role := range userRoles {
+		if role == "admin" {
+			isAdmin = true
+			break
+		}
+	}
+
+	if !isAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only admins can update roles"})
+		return
+	}
+
+	// Fetch user from DB
+	var user models.User
+	if err := database.DB.Where("username = ?", request.Username).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Update roles
+	user.Roles = request.Roles
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update roles"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User roles updated successfully"})
+}
