@@ -3,36 +3,13 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
-	"gatorcan-backend/controllers"
-	"gatorcan-backend/database"
-	"gatorcan-backend/middleware"
-	"gatorcan-backend/models"
 	"gatorcan-backend/utils"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
-
-// SetupTestRouter initializes a test Gin router
-func SetupTestRouter() *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	router := gin.Default()
-	userGroup := router.Group("/users")
-	userGroup.Use(middleware.AuthMiddleware()) // Apply JWT authentication middleware
-	{
-		userGroup.POST("", controllers.CreateUser)
-	}
-	return router
-}
-
-// SetupTestDB initializes an in-memory SQLite database for testing
-func SetupTestDB() {
-	database.Connect()
-	database.DB.AutoMigrate(&models.User{}) // Create schema
-}
 
 // TestCreateUserSuccess ensures only an Admin can register new users
 func TestCreateUserSuccess(t *testing.T) {
@@ -197,7 +174,7 @@ func TestCreateUserFailInvalidEmail(t *testing.T) {
 
 	// Invalid email format
 	userData := map[string]interface{}{
-		"username": "testuser",
+		"username": "testuser3",
 		"email":    "invalid-email",
 		"password": "password123",
 		"roles":    []string{"user"},
