@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"encoding/json"
 	"gatorcan-backend/database"
 	"gatorcan-backend/models"
 	"gatorcan-backend/utils"
@@ -12,8 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestGetUserDetailsSuccess tests fetching user details successfully
-func TestGetUserDetailsSuccess(t *testing.T) {
+func TestDeleteUserSuccess(t *testing.T) {
 	SetupTestDB()
 	router := SetupTestRouter()
 
@@ -27,8 +25,8 @@ func TestGetUserDetailsSuccess(t *testing.T) {
 	}
 	database.DB.Create(&testUser)
 
-	// Request for user details with valid token
-	req, _ := http.NewRequest("GET", "/user/testuser", nil)
+	// Send DELETE request with valid admin token
+	req, _ := http.NewRequest("DELETE", "/user/testuser", nil)
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
 	w := httptest.NewRecorder()
@@ -36,20 +34,15 @@ func TestGetUserDetailsSuccess(t *testing.T) {
 
 	// Validate response
 	assert.Equal(t, http.StatusOK, w.Code)
-	var response map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Equal(t, "testuser", response["username"])
-	assert.Equal(t, "testuser@example.com", response["email"])
-	assert.Contains(t, response["roles"], "user")
+	assert.Contains(t, w.Body.String(), "User testuser has been deleted successfully")
 }
 
-// TestGetUserDetailsFailUnauthorized tests unauthorized access when no token is provided
-func TestGetUserDetailsFailUnauthorized(t *testing.T) {
+func TestDeleteUserFailUnauthorized(t *testing.T) {
 	SetupTestDB()
 	router := SetupTestRouter()
 
-	// Request for user details without any token
-	req, _ := http.NewRequest("GET", "/user/testuser", nil)
+	// Send DELETE request without any token
+	req, _ := http.NewRequest("DELETE", "/user/testuser", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -58,16 +51,15 @@ func TestGetUserDetailsFailUnauthorized(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Authorization token required")
 }
 
-// TestGetUserDetailsFailUserNotFound tests when the requested user is not found
-func TestGetUserDetailsFailUserNotFound(t *testing.T) {
+func TestDeleteUserFailUserNotFound(t *testing.T) {
 	SetupTestDB()
 	router := SetupTestRouter()
 
-	// Generate a valid admin token
+	// Generate admin token
 	adminToken, _ := utils.GenerateToken("adminuser", []string{"admin"})
 
-	// Request for user details of a non-existing user
-	req, _ := http.NewRequest("GET", "/user/nonexistentuser", nil)
+	// Send DELETE request for a non-existing user
+	req, _ := http.NewRequest("DELETE", "/user/nonexistentuser", nil)
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
 	w := httptest.NewRecorder()

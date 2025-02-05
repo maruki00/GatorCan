@@ -29,7 +29,7 @@ func TestCreateUserSuccess(t *testing.T) {
 	jsonData, _ := json.Marshal(userData)
 
 	// Send request with valid Admin token
-	req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
@@ -42,7 +42,7 @@ func TestCreateUserSuccess(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "created successfully")
 }
 
-// TestCreateUserFailNonAdmin ensures that non-admin users cannot register others
+// TestCreateUserFailNonAdmin ensures that non-admin user cannot register others
 func TestCreateUserFailNonAdmin(t *testing.T) {
 	SetupTestDB()
 	router := SetupTestRouter()
@@ -58,7 +58,7 @@ func TestCreateUserFailNonAdmin(t *testing.T) {
 	}
 	jsonData, _ := json.Marshal(userData)
 
-	req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+userToken)
 
@@ -83,7 +83,7 @@ func TestCreateUserFailInvalidToken(t *testing.T) {
 	}
 	jsonData, _ := json.Marshal(userData)
 
-	req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer invalid-token")
 
@@ -110,7 +110,7 @@ func TestCreateUserFailMissingFields(t *testing.T) {
 	}
 	jsonData, _ := json.Marshal(userData)
 
-	req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
@@ -137,7 +137,7 @@ func TestCreateUserFailUserExists(t *testing.T) {
 	}
 	existingUserData, _ := json.Marshal(existingUser)
 
-	req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(existingUserData))
+	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(existingUserData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
@@ -153,7 +153,7 @@ func TestCreateUserFailUserExists(t *testing.T) {
 	}
 	newUserData, _ := json.Marshal(newUser)
 
-	req, _ = http.NewRequest("POST", "/users", bytes.NewBuffer(newUserData))
+	req, _ = http.NewRequest("POST", "/user", bytes.NewBuffer(newUserData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
@@ -181,7 +181,7 @@ func TestCreateUserFailInvalidEmail(t *testing.T) {
 	}
 	jsonData, _ := json.Marshal(userData)
 
-	req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 

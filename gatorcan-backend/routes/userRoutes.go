@@ -14,5 +14,9 @@ func UserRoutes(router *gin.Engine) {
 	{
 		userGroup.POST("/add_user", controllers.CreateUser)
 		userGroup.GET("/:username", controllers.GetUserDetails)
+		userGroup.DELETE("/:username", controllers.DeleteUser)
+		userGroup.PUT("/update", controllers.UpdateUser)
+		userGroup.PUT("/update_role", controllers.UpdateRoles)
+
 	}
 }
