@@ -53,14 +53,14 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	var existingUser models.User
-	if err := database.DB.Where("username = ? OR email = ?", user.Username, user.Email).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User already exists"})
+	if !utils.IsValidEmail(user.Email) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
 		return
 	}
 
-	if !utils.IsValidEmail(user.Email) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
+	var existingUser models.User
+	if err := database.DB.Where("username = ? OR email = ?", user.Username, user.Email).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User already exists"})
 		return
 	}
 
@@ -143,4 +143,24 @@ func hasRole(roles []string, role string) bool {
 		}
 	}
 	return false
+}
+
+func GetUserDetails(c *gin.Context) {
+	// Get the username from the route parameter
+	username := c.Param("username")
+
+	// Query the database to get the user by username
+	var user models.User
+	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Return user details excluding password (for security reasons)
+	c.JSON(http.StatusOK, gin.H{
+		"username":   user.Username,
+		"email":      user.Email,
+		"roles":      user.Roles,
+		"created_at": user.CreatedAt,
+	})
 }
