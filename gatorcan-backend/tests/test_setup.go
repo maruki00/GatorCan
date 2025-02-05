@@ -13,11 +13,14 @@ import (
 func SetupTestRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
-	userGroup := router.Group("/users")
+	userGroup := router.Group("/user")
 	userGroup.Use(middleware.AuthMiddleware()) // Apply JWT authentication middleware
 	{
 		userGroup.POST("", controllers.CreateUser)
 		userGroup.GET("/:username", controllers.GetUserDetails) // For getting user details
+		userGroup.DELETE("/:username", controllers.DeleteUser)
+		userGroup.PUT("/update", controllers.UpdateUser)
+		userGroup.PUT("/update_role", controllers.UpdateRoles)
 	}
 	return router
 }
@@ -26,4 +29,5 @@ func SetupTestRouter() *gin.Engine {
 func SetupTestDB() {
 	database.Connect()
 	database.DB.AutoMigrate(&models.User{}) // Create schema
+	database.DB.Exec("DELETE FROM users")   // Clear users table
 }
