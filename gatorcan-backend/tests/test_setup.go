@@ -22,6 +22,7 @@ func SetupTestRouter() *gin.Engine {
 		userGroup.PUT("/update", controllers.UpdateUser)
 		userGroup.PUT("/update_role", controllers.UpdateRoles)
 	}
+	router.POST("/login", controllers.Login)
 	return router
 }
 
