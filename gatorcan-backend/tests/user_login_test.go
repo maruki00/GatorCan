@@ -26,7 +26,7 @@ func TestLogin(t *testing.T) {
 		Username: "testuser",
 		Email:    "testuser@example.com",
 		Password: password,
-		Roles:    []string{"user"},
+		Roles:    []*models.Role{{Name: "user"}},
 	}
 	database.DB.Create(&testUser)
 
