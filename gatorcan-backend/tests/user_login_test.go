@@ -46,6 +46,24 @@ func TestLogin(t *testing.T) {
 			expectedCode: http.StatusOK,
 			expectedMsg:  "Login successful",
 		},
+		{
+			name: "Invalid username",
+			payload: gin.H{
+				"username": "wronguser",
+				"password": "testpassword",
+			},
+			expectedCode: http.StatusUnauthorized,
+			expectedMsg:  "Invalid username or password",
+		},
+		{
+			name: "Invalid password",
+			payload: gin.H{
+				"username": "testuser",
+				"password": "wrongpassword",
+			},
+			expectedCode: http.StatusUnauthorized,
+			expectedMsg:  "Invalid username or password",
+		},
 	}
 
 	for _, tt := range tests {
