@@ -10,7 +10,7 @@ import (
 )
 
 // AuthMiddleware validates JWT token
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 
@@ -21,13 +21,9 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-		// 	tokenString = tokenString[7:]
-		// }
-
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		fmt.Println("🔍 Received Token:", tokenString)
+		fmt.Println("🔍 Received Token 1:", tokenString)
 
 		claims, err := utils.ValidateToken(tokenString)
 		if err != nil {
@@ -37,10 +33,19 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		fmt.Println("Decoded Token Claims:", claims)
+		for _, role := range claims.Roles {
+			for _, requiredRole := range requiredRoles {
+				if role == requiredRole {
+					fmt.Println(role + "==" + requiredRole)
+					c.Set("username", claims.Username)
+					c.Set("roles", claims.Roles)
+					c.Next()
+					return
+				}
+			}
+		}
 
-		c.Set("username", claims.Username)
-		c.Set("roles", claims.Roles)
-		c.Next()
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized access"})
+		c.Abort()
 	}
 }
