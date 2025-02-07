@@ -3,7 +3,7 @@ package routes
 import (
 	"gatorcan-backend/controllers"
 	"gatorcan-backend/middleware"
-	"gatorcan-backend/userRoles"
+	"gatorcan-backend/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,7 +15,7 @@ func UserRoutes(router *gin.Engine) {
 
 	// Admin-only Routes
 	userGroup := router.Group("/user")
-	userGroup.Use(middleware.AuthMiddleware(userRoles.Admin))
+	userGroup.Use(middleware.AuthMiddleware(string(models.Admin)))
 	{
 		userGroup.POST("/add_user", controllers.CreateUser)
 		userGroup.GET("/:username", controllers.GetUserDetails)
@@ -27,7 +27,7 @@ func UserRoutes(router *gin.Engine) {
 
 	// Instructor-only Routes
 	instructorRoutes := router.Group("/instructor")
-	instructorRoutes.Use(middleware.AuthMiddleware(userRoles.Instructor))
+	instructorRoutes.Use(middleware.AuthMiddleware(string(models.Instructor)))
 	{
 		//instructorRoutes.POST("/upload-assignment", UploadAssignmentHandler)
 	}
