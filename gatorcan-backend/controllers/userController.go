@@ -98,7 +98,7 @@ func Login(c *gin.Context) {
 
 	// Bind JSON data to loginData struct
 	if err := c.ShouldBindJSON(&loginData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -127,7 +127,6 @@ func Login(c *gin.Context) {
 	// The token should be set as authorization header
 	c.Writer.Header().Set("Authorization", "Bearer "+token)
 	// Return the token
-	c.JSON(http.StatusOK, gin.H{"token": "generated"})
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login successful",
