@@ -48,7 +48,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	if user.Username == "" || user.Email == "" || user.Password == "" || user.Roles == nil {
+	if user.Username == "" || user.Email == "" || user.Password == "" || len(user.Roles) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing username, email, password or role"})
 		return
 	}
@@ -70,11 +70,21 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	var newUserRoles []*models.Role
+	for _, roleName := range user.Roles {
+		var role models.Role
+		if err := database.DB.Where("name = ?", roleName).First(&role).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Role %s not found", roleName)})
+			return
+		}
+		newUserRoles = append(newUserRoles, &role)
+	}
+
 	newUser := models.User{
 		Username: user.Username,
 		Email:    user.Email,
 		Password: hashedPassword,
-		Roles:    user.Roles,
+		Roles:    newUserRoles,
 	}
 
 	if err := database.DB.Create(&newUser).Error; err != nil {
@@ -117,8 +127,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// Convert roles to []string
+	var roleNames []string
+	for _, role := range user.Roles {
+		roleNames = append(roleNames, role.Name)
+	}
+
 	// Generate JWT token
-	token, err := utils.GenerateToken(loginData.Username, user.Roles)
+	token, err := utils.GenerateToken(loginData.Username, roleNames)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
@@ -284,8 +300,18 @@ func UpdateRoles(c *gin.Context) {
 		return
 	}
 
+	var newUserRoles []*models.Role
+	for _, roleName := range request.Roles {
+		var role models.Role
+		if err := database.DB.Where("name = ?", roleName).First(&role).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Role %s not found", roleName)})
+			return
+		}
+		newUserRoles = append(newUserRoles, &role)
+	}
+
 	// Update roles
-	user.Roles = request.Roles
+	user.Roles = newUserRoles
 	if err := database.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update roles"})
 		return
