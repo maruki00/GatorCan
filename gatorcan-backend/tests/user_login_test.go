@@ -64,6 +64,22 @@ func TestLogin(t *testing.T) {
 			expectedCode: http.StatusUnauthorized,
 			expectedMsg:  "Invalid username or password",
 		},
+		{
+			name: "Missing username",
+			payload: gin.H{
+				"password": "testpassword",
+			},
+			expectedCode: http.StatusBadRequest,
+			expectedMsg:  "Key: 'Username' Error:Field validation for 'Username' failed on the 'required' tag",
+		},
+		{
+			name: "Missing password",
+			payload: gin.H{
+				"username": "testuser",
+			},
+			expectedCode: http.StatusBadRequest,
+			expectedMsg:  "Key: 'Password' Error:Field validation for 'Password' failed on the 'required' tag",
+		},
 	}
 
 	for _, tt := range tests {
