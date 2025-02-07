@@ -32,7 +32,7 @@ func (r *userRepository) GetUserByUsername(username string) (*models.User, error
 	// 	Password: string(hashedPassword),
 	// 	Roles:    []string{"admin", "Instructor"},
 	// }
-	err := database.DB.Where("username = ?", username).First(&user).Error
+	err := database.DB.Preload("Roles").Where("username = ?", username).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
