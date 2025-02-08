@@ -17,11 +17,12 @@ func TestDeleteUserSuccess(t *testing.T) {
 
 	// Insert a test user into the database
 	adminToken, _ := utils.GenerateToken("adminuser", []string{"admin"})
+	var userRole models.Role
 	testUser := models.User{
 		Username: "testuser",
 		Email:    "testuser@example.com",
 		Password: "hashedpassword",
-		Roles:    []string{"user"},
+		Roles:    []*models.Role{&userRole}, // Correctly assign role as []*models.Role
 	}
 	database.DB.Create(&testUser)
 

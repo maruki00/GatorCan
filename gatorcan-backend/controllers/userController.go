@@ -6,6 +6,7 @@ import (
 	"gatorcan-backend/models"
 	"gatorcan-backend/repositories"
 	"gatorcan-backend/utils"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,23 +20,7 @@ type UserRequest struct {
 }
 
 func CreateUser(c *gin.Context) {
-	if c.IsAborted() {
-		return
-	}
-
-	roles, exists := c.Get("roles")
-	if !exists {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: No roles found"})
-		return
-	}
-
-	rolesSlice, ok := roles.([]string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid roles format"})
-		return
-	}
-
-	if !hasRole(rolesSlice, "admin") {
+	if !utils.IsAdmin(c) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: Only admins can register users"})
 		return
 	}
@@ -46,18 +31,14 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	if user.Username == "" || user.Email == "" || user.Password == "" || len(user.Roles) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing username, email, password or role"})
-		return
-	}
-
 	if !utils.IsValidEmail(user.Email) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
 		return
 	}
 
-	var existingUser models.User
-	if err := database.DB.Where("username = ? OR email = ?", user.Username, user.Email).First(&existingUser).Error; err == nil {
+	var count int64
+	database.DB.Model(&models.User{}).Where("username = ? OR email = ?", user.Username, user.Email).Count(&count)
+	if count > 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User already exists"})
 		return
 	}
@@ -69,13 +50,9 @@ func CreateUser(c *gin.Context) {
 	}
 
 	var newUserRoles []*models.Role
-	for _, roleName := range user.Roles {
-		var role models.Role
-		if err := database.DB.Where("name = ?", roleName).First(&role).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Role %s not found", roleName)})
-			return
-		}
-		newUserRoles = append(newUserRoles, &role)
+	if err := database.DB.Where("name IN ?", user.Roles).Find(&newUserRoles).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "One or more roles not found"})
+		return
 	}
 
 	newUser := models.User{
@@ -90,11 +67,8 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("User %s has been created with email %s\n", newUser.Username, newUser.Email)
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("User %s has been created successfully", newUser.Username),
-	})
+	log.Printf("User created: %s, Email: %s", newUser.Username, newUser.Email)
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("User %s has been created successfully", newUser.Username)})
 }
 
 // Handler function for the login route
@@ -112,6 +86,10 @@ func Login(c *gin.Context) {
 
 	// get user from the database
 	user, err := repositories.NewUserRepository().GetUserByUsername(loginData.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
+		return
+	}
 
 	// Check if the user exists
 	if user == nil {
@@ -149,15 +127,6 @@ func Login(c *gin.Context) {
 
 }
 
-func hasRole(roles []string, role string) bool {
-	for _, r := range roles {
-		if r == role {
-			return true
-		}
-	}
-	return false
-}
-
 func GetUserDetails(c *gin.Context) {
 	// Get the username from the route parameter
 	username := c.Param("username")
@@ -179,45 +148,18 @@ func GetUserDetails(c *gin.Context) {
 }
 
 func DeleteUser(c *gin.Context) {
-	// Extract the username from the URL parameter
-	username := c.Param("username")
-
-	// Check for admin roles (optional, if only admin should delete users)
-	roles, exists := c.Get("roles")
-	if !exists {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: No roles found"})
-		return
-	}
-
-	rolesSlice, ok := roles.([]string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid roles format"})
-		return
-	}
-
-	if !hasRole(rolesSlice, "admin") {
+	if !utils.IsAdmin(c) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: Only admins can delete users"})
 		return
 	}
 
-	// Query the database to find the user by username
-	var user models.User
-	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
-		// If no user is found, return a "user not found" message
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-
-	// Delete the user from the database
-	if err := database.DB.Delete(&user).Error; err != nil {
+	username := c.Param("username")
+	if err := database.DB.Where("username = ?", username).Delete(&models.User{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
 		return
 	}
 
-	// Respond with a success message
-	c.JSON(http.StatusOK, gin.H{
-		"message": fmt.Sprintf("User %s has been deleted successfully", username),
-	})
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("User %s has been deleted successfully", username)})
 }
 
 func UpdateUser(c *gin.Context) {
@@ -270,46 +212,56 @@ func UpdateRoles(c *gin.Context) {
 		Roles    []string `json:"roles" binding:"required"`
 	}
 
+	// Validate request body
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	// Check if the requester is an admin
-	roles, _ := c.Get("roles") // Get user roles from JWT
-	userRoles := roles.([]string)
-	isAdmin := false
-	for _, role := range userRoles {
-		if role == "admin" {
-			isAdmin = true
-			break
-		}
-	}
-
-	if !isAdmin {
+	// Check if requester is admin
+	if !utils.IsAdmin(c) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Only admins can update roles"})
 		return
 	}
 
-	// Fetch user from DB
+	// Fetch user
 	var user models.User
 	if err := database.DB.Where("username = ?", request.Username).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
-	var newUserRoles []*models.Role
-	for _, roleName := range request.Roles {
-		var role models.Role
-		if err := database.DB.Where("name = ?", roleName).First(&role).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Role %s not found", roleName)})
-			return
-		}
-		newUserRoles = append(newUserRoles, &role)
+	// Fetch roles in a single query
+	var roles []models.Role
+	if err := database.DB.Where("name IN (?)", request.Roles).Find(&roles).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch roles"})
+		return
 	}
 
-	// Update roles
-	user.Roles = newUserRoles
+	// Check for missing roles
+	foundRoles := make(map[string]bool)
+	for _, role := range roles {
+		foundRoles[role.Name] = true
+	}
+
+	var missingRoles []string
+	for _, role := range request.Roles {
+		if !foundRoles[role] {
+			missingRoles = append(missingRoles, role)
+		}
+	}
+
+	if len(missingRoles) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Roles not found: %v", missingRoles)})
+		return
+	}
+
+	// Update user's roles
+	user.Roles = make([]*models.Role, len(roles))
+	for i := range roles {
+		user.Roles[i] = &roles[i]
+	}
+
 	if err := database.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update roles"})
 		return

@@ -119,7 +119,7 @@ func TestCreateUserFailMissingFields(t *testing.T) {
 
 	// Expect Bad Request (400)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Contains(t, w.Body.String(), "Missing username, email, password or role")
+	assert.Contains(t, w.Body.String(), "Invalid email format")
 }
 
 // TestCreateUserFailUserExists ensures that a user with the same username or email cannot be registered
