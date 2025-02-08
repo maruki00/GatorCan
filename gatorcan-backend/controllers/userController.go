@@ -3,7 +3,6 @@ package controllers
 import (
 	"fmt"
 	"gatorcan-backend/database"
-	"gatorcan-backend/middleware"
 	"gatorcan-backend/models"
 	"gatorcan-backend/repositories"
 	"gatorcan-backend/utils"
@@ -20,7 +19,6 @@ type UserRequest struct {
 }
 
 func CreateUser(c *gin.Context) {
-	middleware.AuthMiddleware()(c)
 	if c.IsAborted() {
 		return
 	}
