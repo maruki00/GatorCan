@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"gatorcan-backend/database"
 	"gatorcan-backend/models"
-	"gatorcan-backend/repositories"
 	"gatorcan-backend/services"
+	"gatorcan-backend/DTOs"
 	"gatorcan-backend/utils"
 	"log"
 	"net/http"
@@ -70,7 +70,7 @@ func CreateUser(c *gin.Context) {
 
 // Handler function for the login route
 func Login(c *gin.Context) {
-	var loginData *services.LoginData
+	var loginData *dtos.LoginRequestDTO
 
 	// Bind JSON data to loginData struct
 	if err := c.ShouldBindJSON(&loginData); err != nil {
@@ -85,11 +85,10 @@ func Login(c *gin.Context) {
 	}else{
 		c.Writer.Header().Set("Authorization", "Bearer "+response.Token)
 		c.JSON(response.Code, gin.H{
-			"message": "Login successful",
+			"message": response.Message,
 			"token": response.Token,
 		})
 	}
-
 }
 
 func GetUserDetails(c *gin.Context) {

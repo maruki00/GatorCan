@@ -2,26 +2,15 @@ package services
 
 import (
 	"errors"
+	"gatorcan-backend/DTOs"
 	"gatorcan-backend/models"
 	"gatorcan-backend/repositories"
 	"gatorcan-backend/utils"
 	"net/http"
 )
 
-type loginResponse struct {
-	Err     bool
-	Code    int
-	Message string
-	Token   string
-}
-
-type LoginData struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
-func Login(loginData *LoginData) (*loginResponse, error) {
-	var response loginResponse
+func Login(loginData *dtos.LoginRequestDTO) (*dtos.LoginResponseDTO, error) {
+	var response dtos.LoginResponseDTO
 	var user *models.User
 
 	// get user from the database
