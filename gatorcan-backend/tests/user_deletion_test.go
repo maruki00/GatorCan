@@ -17,16 +17,17 @@ func TestDeleteUserSuccess(t *testing.T) {
 
 	// Insert a test user into the database
 	adminToken, _ := utils.GenerateToken("adminuser", []string{"admin"})
+	var userRole models.Role
 	testUser := models.User{
 		Username: "testuser",
 		Email:    "testuser@example.com",
 		Password: "hashedpassword",
-		Roles:    []string{"user"},
+		Roles:    []*models.Role{&userRole}, // Correctly assign role as []*models.Role
 	}
 	database.DB.Create(&testUser)
 
 	// Send DELETE request with valid admin token
-	req, _ := http.NewRequest("DELETE", "/user/testuser", nil)
+	req, _ := http.NewRequest("DELETE", "/admin/testuser", nil)
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
 	w := httptest.NewRecorder()
@@ -42,7 +43,7 @@ func TestDeleteUserFailUnauthorized(t *testing.T) {
 	router := SetupTestRouter()
 
 	// Send DELETE request without any token
-	req, _ := http.NewRequest("DELETE", "/user/testuser", nil)
+	req, _ := http.NewRequest("DELETE", "/admin/testuser", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -59,7 +60,7 @@ func TestDeleteUserFailUserNotFound(t *testing.T) {
 	adminToken, _ := utils.GenerateToken("adminuser", []string{"admin"})
 
 	// Send DELETE request for a non-existing user
-	req, _ := http.NewRequest("DELETE", "/user/nonexistentuser", nil)
+	req, _ := http.NewRequest("DELETE", "/admin/nonexistentuser", nil)
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
 	w := httptest.NewRecorder()
