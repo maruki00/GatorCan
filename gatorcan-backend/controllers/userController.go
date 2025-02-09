@@ -20,10 +20,6 @@ type UserRequest struct {
 }
 
 func CreateUser(c *gin.Context) {
-	if !utils.IsAdmin(c) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: Only admins can register users"})
-		return
-	}
 
 	var user UserRequest
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -154,10 +150,6 @@ func GetUserDetails(c *gin.Context) {
 }
 
 func DeleteUser(c *gin.Context) {
-	if !utils.IsAdmin(c) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied: Only admins can delete users"})
-		return
-	}
 
 	username := c.Param("username")
 
@@ -230,12 +222,6 @@ func UpdateRoles(c *gin.Context) {
 	// Validate request body
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		return
-	}
-
-	// Check if requester is admin
-	if !utils.IsAdmin(c) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Only admins can update roles"})
 		return
 	}
 

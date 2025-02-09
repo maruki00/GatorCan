@@ -26,11 +26,11 @@ func TestUpdatePassword(t *testing.T) {
 	database.DB.Create(&testUser)
 
 	// Generate JWT token
-	token, _ := utils.GenerateToken("testuser", []string{"user"})
+	token, _ := utils.GenerateToken("testuser", []string{"student"})
 
 	// ✅ Test successful password update
 	reqBody := `{"old_password": "oldpassword", "new_password": "newsecurepassword"}`
-	req, _ := http.NewRequest("PUT", "/user/update", bytes.NewReader([]byte(reqBody))) // Changed here
+	req, _ := http.NewRequest("PUT", "/user/update", bytes.NewReader([]byte(reqBody)))
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	w := httptest.NewRecorder()
@@ -61,7 +61,7 @@ func TestUpdateRoles(t *testing.T) {
 
 	// ✅ Test successful role update by admin
 	reqBody := `{"username": "testuser", "roles": ["student"]}`
-	req, _ := http.NewRequest("PUT", "/user/update_role", bytes.NewReader([]byte(reqBody)))
+	req, _ := http.NewRequest("PUT", "/admin/update_role", bytes.NewReader([]byte(reqBody)))
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
 	w := httptest.NewRecorder()
@@ -70,17 +70,17 @@ func TestUpdateRoles(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "User roles updated successfully")
 
 	// ❌ Test non-admin trying to update roles
-	req, _ = http.NewRequest("PUT", "/user/update_role", bytes.NewReader([]byte(reqBody)))
+	req, _ = http.NewRequest("PUT", "/admin/update_role", bytes.NewReader([]byte(reqBody)))
 	req.Header.Set("Authorization", "Bearer "+userToken) // userToken used here
 
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.Contains(t, w.Body.String(), "Only admins can update roles")
+	assert.Contains(t, w.Body.String(), "Unauthorized access")
 
 	// ❌ Test updating roles for a non-existent user
 	reqBody = `{"username": "nonexistentuser", "roles": ["admin"]}`
-	req, _ = http.NewRequest("PUT", "/user/update_role", bytes.NewReader([]byte(reqBody)))
+	req, _ = http.NewRequest("PUT", "/admin/update_role", bytes.NewReader([]byte(reqBody)))
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
 	w = httptest.NewRecorder()
@@ -89,7 +89,7 @@ func TestUpdateRoles(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "User not found")
 
 	// ❌ Test missing authentication
-	req, _ = http.NewRequest("PUT", "/user/update_role", bytes.NewReader([]byte(reqBody)))
+	req, _ = http.NewRequest("PUT", "/admin/update_role", bytes.NewReader([]byte(reqBody)))
 
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
