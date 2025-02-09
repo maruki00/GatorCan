@@ -9,42 +9,43 @@ import (
 )
 
 type loginResponse struct {
-	error   bool
-	code    int
-	message string
-	token   string
+	Err     bool
+	Code    int
+	Message string
+	Token   string
 }
 
-func Login() (*loginResponse, error) {
+type LoginData struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+func Login(loginData *LoginData) (*loginResponse, error) {
 	var response loginResponse
 	var user *models.User
-	var loginData struct {
-		Username string `json:"username" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
 
 	// get user from the database
 	user, err := repositories.NewUserRepository().GetUserByUsername(loginData.Username)
 	if err != nil {
-		response.code = http.StatusInternalServerError
-		response.message = "Failed to get user data"
-		response.error = true
+		response.Code = http.StatusInternalServerError
+		response.Message = "Failed to get user data"
+		response.Err = true
 		return &response, err
 	}
 
 	// Check if the user exists
 	if user == nil {
-		response.code = http.StatusUnauthorized
-		response.message = "Invalid username or password"
-		response.error = true
+		response.Code = http.StatusUnauthorized
+		response.Message = "Invalid username or password"
+		response.Err = true
 		return &response, err
 	}
 
 	// Check if the password matches
 	if err := utils.VerifyPassword(user.Password, loginData.Password); !err {
-		response.code = http.StatusUnauthorized
-		response.message = "Invalid username or password"
-		response.error = true
+		response.Code = http.StatusUnauthorized
+		response.Message = "Invalid username or password"
+		response.Err = true
 		return &response, errors.New("Invalid username or password")
 	}
 
@@ -57,16 +58,16 @@ func Login() (*loginResponse, error) {
 	// Generate JWT token
 	token, err := utils.GenerateToken(loginData.Username, roleNames)
 	if err != nil {
-		response.code = http.StatusInternalServerError
-		response.message = "Failed to generate token"
-		response.error = true
+		response.Code = http.StatusInternalServerError
+		response.Message = "Failed to generate token"
+		response.Err = true
 		return &response, err
 	}
 
 	// The token should be set as authorization header
-	response.code = http.StatusOK
-	response.message = "Login successful"
-	response.error = false
-	response.token = token
+	response.Code = http.StatusOK
+	response.Message = "Login successful"
+	response.Err = false
+	response.Token = token
 	return &response, nil
 }
