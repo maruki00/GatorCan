@@ -32,7 +32,7 @@ func TestGetUserDetailsSuccess(t *testing.T) {
 	database.DB.Create(&testUser)
 
 	// Request for user details with valid token
-	req, _ := http.NewRequest("GET", "/admin/testuser", nil)
+	req, _ := http.NewRequest("GET", "/user/testuser", nil)
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -74,7 +74,7 @@ func TestGetUserDetailsFailUnauthorized(t *testing.T) {
 	router := SetupTestRouter()
 
 	// Request for user details without any token
-	req, _ := http.NewRequest("GET", "/admin/testuser", nil)
+	req, _ := http.NewRequest("GET", "/user/testuser", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -92,7 +92,7 @@ func TestGetUserDetailsFailUserNotFound(t *testing.T) {
 	adminToken, _ := utils.GenerateToken("adminuser", []string{"admin"})
 
 	// Request for user details of a non-existing user
-	req, _ := http.NewRequest("GET", "/admin/nonexistentuser", nil)
+	req, _ := http.NewRequest("GET", "/user/nonexistentuser", nil)
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
 	w := httptest.NewRecorder()

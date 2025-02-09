@@ -18,14 +18,13 @@ func UserRoutes(router *gin.Engine) {
 	adminGroup.Use(middleware.AuthMiddleware(string(models.Admin)))
 	{
 		adminGroup.POST("/add_user", controllers.CreateUser)
-		adminGroup.GET("/:username", controllers.GetUserDetails)
 		adminGroup.DELETE("/:username", controllers.DeleteUser)
 		adminGroup.PUT("/update_role", controllers.UpdateRoles)
 
 	}
 	userGroup := router.Group("/user")
-	userGroup.Use(middleware.AuthMiddleware(string(models.Student)))
 	{
+		userGroup.GET("/:username", controllers.GetUserDetails)
 		userGroup.PUT("/update", controllers.UpdateUser)
 
 	}

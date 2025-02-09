@@ -20,7 +20,6 @@ func SetupTestRouter() *gin.Engine {
 	adminGroup.Use(middleware.AuthMiddleware(string(models.Admin)))
 	{
 		adminGroup.POST("/add_user", controllers.CreateUser)
-		adminGroup.GET("/:username", controllers.GetUserDetails)
 		adminGroup.DELETE("/:username", controllers.DeleteUser)
 		adminGroup.PUT("/update_role", controllers.UpdateRoles)
 
@@ -28,6 +27,7 @@ func SetupTestRouter() *gin.Engine {
 	userGroup := router.Group("/user")
 	userGroup.Use(middleware.AuthMiddleware(string(models.Student)))
 	{
+		userGroup.GET("/:username", controllers.GetUserDetails)
 		userGroup.PUT("/update", controllers.UpdateUser)
 
 	}
@@ -46,5 +46,7 @@ func SetupTestDB() {
 
 	database.Connect()
 	database.DB.AutoMigrate(&models.User{}) // Create schema
-	database.DB.Exec("DELETE FROM users")   // Clear users table
+	database.DB.Exec("DELETE FROM users")
+	database.DB.Exec("DELETE FROM user_roles")
+	database.DB.Exec("DELETE FROM roles") // Clear users table
 }
