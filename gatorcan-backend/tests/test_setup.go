@@ -30,5 +30,10 @@ func SetupTestRouter() *gin.Engine {
 func SetupTestDB() {
 	database.Connect()
 	database.DB.AutoMigrate(&models.User{}) // Create schema
-	database.DB.Exec("DELETE FROM users")   // Clear users table
+	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'student');")
+	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'admin');")
+	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'instructor');")
+	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'teaching_assistant');")
+	database.DB.Exec("DELETE FROM users") // Clear users table
+	database.DB.Exec("DELETE FROM roles") // Clear roles table
 }
