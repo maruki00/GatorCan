@@ -17,31 +17,55 @@ func TestGetUserDetailsSuccess(t *testing.T) {
 	SetupTestDB()
 	router := SetupTestRouter()
 
-	// Insert a test user into the database
+	// Insert a test role into the database
+	userRole := models.Role{Name: "user"}
+	database.DB.Create(&userRole) // Ensure the role exists in DB
+
+	// Insert a test user with the role
 	adminToken, _ := utils.GenerateToken("adminuser", []string{"admin"})
-	var userRole models.Role
 	testUser := models.User{
 		Username: "testuser",
 		Email:    "testuser@example.com",
 		Password: "hashedpassword",
-		Roles:    []*models.Role{&userRole}, // Correctly assign role as []*models.Role
+		Roles:    []*models.Role{&userRole}, // Assign role correctly
 	}
 	database.DB.Create(&testUser)
 
 	// Request for user details with valid token
 	req, _ := http.NewRequest("GET", "/user/testuser", nil)
 	req.Header.Set("Authorization", "Bearer "+adminToken)
-
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
-
 	// Validate response
 	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Decode response
 	var response map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &response)
+
+	// Assertions
 	assert.Equal(t, "testuser", response["username"])
 	assert.Equal(t, "testuser@example.com", response["email"])
-	assert.Contains(t, response["roles"], "user")
+
+	// Ensure roles are correctly formatted
+	roles, ok := response["roles"].([]interface{})
+	assert.True(t, ok, "Roles should be a list")
+
+	// Extract role names safely
+	var roleNames []string
+	for _, role := range roles {
+		switch v := role.(type) {
+		case string:
+			roleNames = append(roleNames, v)
+		case map[string]interface{}:
+			if name, exists := v["name"].(string); exists {
+				roleNames = append(roleNames, name)
+			}
+		}
+	}
+
+	// Validate that the role "user" exists in the list
+	assert.Contains(t, roleNames, "user", "Expected role 'user' in response")
 }
 
 // TestGetUserDetailsFailUnauthorized tests unauthorized access when no token is provided

@@ -28,6 +28,7 @@ func SetupTestRouter() *gin.Engine {
 
 // SetupTestDB initializes an in-memory SQLite database for testing
 func SetupTestDB() {
+
 	database.Connect()
 	database.DB.AutoMigrate(&models.User{}) // Create schema
 	database.DB.Exec("DELETE FROM users")   // Clear users table

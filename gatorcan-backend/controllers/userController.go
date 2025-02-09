@@ -131,18 +131,24 @@ func GetUserDetails(c *gin.Context) {
 	// Get the username from the route parameter
 	username := c.Param("username")
 
-	// Query the database to get the user by username
+	// Query the database to get the user by username, including their roles
 	var user models.User
-	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
+	if err := database.DB.Preload("Roles").Where("username = ?", username).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
-	// Return user details excluding password (for security reasons)
+	// Create a slice to hold role names
+	var roleNames []string
+	for _, role := range user.Roles {
+		roleNames = append(roleNames, role.Name)
+	}
+
+	// Return user details including the roles (excluding password for security reasons)
 	c.JSON(http.StatusOK, gin.H{
 		"username":   user.Username,
 		"email":      user.Email,
-		"roles":      user.Roles,
+		"roles":      roleNames, // Use the slice of role names
 		"created_at": user.CreatedAt,
 	})
 }
@@ -154,7 +160,16 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	username := c.Param("username")
-	if err := database.DB.Where("username = ?", username).Delete(&models.User{}).Error; err != nil {
+
+	// Check if the user exists before deleting
+	var user models.User
+	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Delete the user
+	if err := database.DB.Delete(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
 		return
 	}

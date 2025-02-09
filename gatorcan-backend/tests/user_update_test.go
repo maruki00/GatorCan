@@ -44,6 +44,12 @@ func TestUpdateRoles(t *testing.T) {
 	router := SetupTestRouter()
 
 	// Create test users
+	studentRole := models.Role{Name: "student"}
+	adminRole := models.Role{Name: "admin"}
+	database.DB.Create(&studentRole)
+	database.DB.Create(&adminRole)
+
+	// Create test users
 	adminUser := models.User{Username: "admin", Email: "admin@example.com", Password: "hashedpassword"}
 	regularUser := models.User{Username: "testuser", Email: "testuser@example.com", Password: "hashedpassword"}
 	database.DB.Create(&adminUser)
@@ -54,7 +60,7 @@ func TestUpdateRoles(t *testing.T) {
 	userToken, _ := utils.GenerateToken("testuser", []string{"user"}) // userToken is used here
 
 	// ✅ Test successful role update by admin
-	reqBody := `{"username": "testuser", "roles": ["moderator"]}`
+	reqBody := `{"username": "testuser", "roles": ["student"]}`
 	req, _ := http.NewRequest("PUT", "/user/update_role", bytes.NewReader([]byte(reqBody)))
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
