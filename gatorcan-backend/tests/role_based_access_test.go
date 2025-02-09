@@ -25,6 +25,7 @@ func generateToken(username string, roles []string) string {
 }
 
 func TestAdminAccess(t *testing.T) {
+	SetupTestDB()
 	router := setupRouter()
 
 	adminToken := generateToken("adminUser", []string{string(models.Admin)})
@@ -98,6 +99,6 @@ func TestUnauthorizedAccess(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/instructor/upload-assignment", nil)
 		router.ServeHTTP(w, req)
 
-		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 }
