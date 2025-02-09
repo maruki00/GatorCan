@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"gatorcan-backend/utils"
 	"net/http"
 	"strings"
@@ -9,13 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AuthMiddleware validates JWT token
+// AuthMiddleware validates JWT token and checks for required roles
 func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
-
 		if authHeader == "" {
-			fmt.Println("No Authorization token received")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
 			c.Abort()
 			return
@@ -23,28 +20,46 @@ func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		fmt.Println("🔍 Received Token 1:", tokenString)
-
 		claims, err := utils.ValidateToken(tokenString)
 		if err != nil {
-			fmt.Println("Invalid Token:", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
 			return
 		}
 
+		// Store token claims in context
+		c.Set("username", claims.Username)
+		c.Set("roles", claims.Roles)
+
+		// ✅ If the user is an admin, allow access to everything
 		for _, role := range claims.Roles {
-			for _, requiredRole := range requiredRoles {
-				if role == requiredRole {
-					fmt.Println(role + "==" + requiredRole)
-					c.Set("username", claims.Username)
-					c.Set("roles", claims.Roles)
-					c.Next()
-					return
-				}
+			if role == "admin" {
+				c.Next()
+				return
 			}
 		}
 
+		// If no roles are required, allow access
+		if len(requiredRoles) == 0 {
+			c.Next()
+			return
+		}
+
+		// Convert required roles into a set for efficient lookup
+		requiredRolesMap := make(map[string]struct{}, len(requiredRoles))
+		for _, role := range requiredRoles {
+			requiredRolesMap[role] = struct{}{}
+		}
+
+		// Check if the user has any required role
+		for _, userRole := range claims.Roles {
+			if _, exists := requiredRolesMap[userRole]; exists {
+				c.Next()
+				return
+			}
+		}
+
+		// If no matching role is found, deny access
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized access"})
 		c.Abort()
 	}

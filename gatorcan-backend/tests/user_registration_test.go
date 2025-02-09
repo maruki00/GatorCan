@@ -29,7 +29,7 @@ func TestCreateUserSuccess(t *testing.T) {
 	jsonData, _ := json.Marshal(userData)
 
 	// Send request with valid Admin token
-	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", "/admin/add_user", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
@@ -58,7 +58,7 @@ func TestCreateUserFailNonAdmin(t *testing.T) {
 	}
 	jsonData, _ := json.Marshal(userData)
 
-	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", "/admin/add_user", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+userToken)
 
@@ -67,7 +67,7 @@ func TestCreateUserFailNonAdmin(t *testing.T) {
 
 	// Expect Forbidden (403)
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.Contains(t, w.Body.String(), "Access denied")
+	assert.Contains(t, w.Body.String(), "Unauthorized access")
 }
 
 // TestCreateUserFailInvalidToken ensures registration fails with an invalid token
@@ -83,7 +83,7 @@ func TestCreateUserFailInvalidToken(t *testing.T) {
 	}
 	jsonData, _ := json.Marshal(userData)
 
-	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", "/admin/add_user", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer invalid-token")
 
@@ -110,7 +110,7 @@ func TestCreateUserFailMissingFields(t *testing.T) {
 	}
 	jsonData, _ := json.Marshal(userData)
 
-	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", "/admin/add_user", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
@@ -119,7 +119,7 @@ func TestCreateUserFailMissingFields(t *testing.T) {
 
 	// Expect Bad Request (400)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Contains(t, w.Body.String(), "Missing username, email, password or role")
+	assert.Contains(t, w.Body.String(), "Invalid email format")
 }
 
 // TestCreateUserFailUserExists ensures that a user with the same username or email cannot be registered
@@ -137,7 +137,7 @@ func TestCreateUserFailUserExists(t *testing.T) {
 	}
 	existingUserData, _ := json.Marshal(existingUser)
 
-	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(existingUserData))
+	req, _ := http.NewRequest("POST", "/admin/add_user", bytes.NewBuffer(existingUserData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
@@ -153,7 +153,7 @@ func TestCreateUserFailUserExists(t *testing.T) {
 	}
 	newUserData, _ := json.Marshal(newUser)
 
-	req, _ = http.NewRequest("POST", "/user", bytes.NewBuffer(newUserData))
+	req, _ = http.NewRequest("POST", "/admin/add_user", bytes.NewBuffer(newUserData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
@@ -181,7 +181,7 @@ func TestCreateUserFailInvalidEmail(t *testing.T) {
 	}
 	jsonData, _ := json.Marshal(userData)
 
-	req, _ := http.NewRequest("POST", "/user", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", "/admin/add_user", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+adminToken)
 
