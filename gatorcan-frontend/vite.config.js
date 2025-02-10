@@ -11,7 +11,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      "/user/add_user": {
+      "/admin/add_user": {
         target: "http://localhost:8080",
         changeOrigin: true,
         secure: false,
