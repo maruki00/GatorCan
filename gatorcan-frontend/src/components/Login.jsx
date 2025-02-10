@@ -3,23 +3,14 @@ import Paper from "@mui/material/Paper";
 import Input from "@mui/material/Input";
 import { Button, Typography } from "@mui/material";
 
-import { Link, replace, useNavigate, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useRef, useState, useEffect } from "react";
 import { Box } from "@mui/material";
-import login from "../services/AuthService";
-
 
 const Login = () => {
-
-  const username = localStorage.getItem("username");
-  if (username) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const userRef = useRef();
   const errRef = useRef();
 
-  const navigate = useNavigate();
 
   const [user, setUser] = useState("");
   const [pwd, setPwd] = useState("");
@@ -35,24 +26,11 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await login(user, pwd);
-      console.log("Login Successful:", response);
-      let success = response["success"];
-      if (!success) {
-        console.log(response["message"]);
-        setErrMsg(response["message"])
-      } else {
-        navigate("/dashboard", replace);
-      }
-    } catch (error) {
-      setErrMsg(error.response?.data?.message || "Unknown error");
-    }
   };
 
   const paperStyle = {
     padding: 20,
-    width: 300,
+    width: 350,
     margin: "19px auto",
   };
   const btnstyle = { backgroundColor: "#1B6DA1", margin: "20px 0" };
@@ -75,7 +53,7 @@ const Login = () => {
         <form onSubmit={handleSubmit}>
           <Paper elavation={12} style={paperStyle}>
             <Grid align="center">
-              <h2>Login</h2>
+              <h1>Login</h1>
             </Grid>
             <Input
               type="text"
