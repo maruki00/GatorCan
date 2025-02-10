@@ -3,7 +3,7 @@ import axios from "axios";
 const base_url = "/";
 
 export const addUser = async (username, password, email, roles) => {
-  const add_user_url = base_url + "user/add_user";
+  const add_user_url = base_url + "admin/add_user";
   console.log(roles);
   var roles_string = "";
   roles.forEach((role) => {
