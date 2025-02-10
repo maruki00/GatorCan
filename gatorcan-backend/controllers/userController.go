@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"gatorcan-backend/database"
 	"gatorcan-backend/models"
-	"gatorcan-backend/repositories"
+	"gatorcan-backend/services"
+	"gatorcan-backend/DTOs"
 	"gatorcan-backend/utils"
 	"log"
 	"net/http"
@@ -69,10 +70,7 @@ func CreateUser(c *gin.Context) {
 
 // Handler function for the login route
 func Login(c *gin.Context) {
-	var loginData struct {
-		Username string `json:"username" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
+	var loginData *dtos.LoginRequestDTO
 
 	// Bind JSON data to loginData struct
 	if err := c.ShouldBindJSON(&loginData); err != nil {
@@ -80,47 +78,17 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// get user from the database
-	user, err := repositories.NewUserRepository().GetUserByUsername(loginData.Username)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user data"})
-		return
+	// Call the login service
+	response, err := services.Login(loginData)
+	if response.Err || err != nil {
+		c.JSON(response.Code, gin.H{"error": response.Message})
+	}else{
+		c.Writer.Header().Set("Authorization", "Bearer "+response.Token)
+		c.JSON(response.Code, gin.H{
+			"message": response.Message,
+			"token": response.Token,
+		})
 	}
-
-	// Check if the user exists
-	if user == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid username or password"})
-		return
-	}
-
-	// Check if the password matches
-	if err := utils.VerifyPassword(user.Password, loginData.Password); !err {
-		c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid username or password"})
-		return
-	}
-
-	// Convert roles to []string
-	var roleNames []string
-	for _, role := range user.Roles {
-		roleNames = append(roleNames, role.Name)
-	}
-
-	// Generate JWT token
-	token, err := utils.GenerateToken(loginData.Username, roleNames)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	// The token should be set as authorization header
-	c.Writer.Header().Set("Authorization", "Bearer "+token)
-	// Return the token
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
-		"token":   token,
-	})
-
 }
 
 func GetUserDetails(c *gin.Context) {
