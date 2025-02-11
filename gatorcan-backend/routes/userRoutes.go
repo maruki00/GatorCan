@@ -23,6 +23,7 @@ func UserRoutes(router *gin.Engine) {
 
 	}
 	userGroup := router.Group("/user")
+	userGroup.Use(middleware.AuthMiddleware(string(models.Student)))
 	{
 		userGroup.GET("/:username", controllers.GetUserDetails)
 		userGroup.PUT("/update", controllers.UpdateUser)
