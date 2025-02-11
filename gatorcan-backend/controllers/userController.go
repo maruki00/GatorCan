@@ -2,10 +2,10 @@ package controllers
 
 import (
 	"fmt"
+	dtos "gatorcan-backend/DTOs"
 	"gatorcan-backend/database"
 	"gatorcan-backend/models"
 	"gatorcan-backend/services"
-	"gatorcan-backend/DTOs"
 	"gatorcan-backend/utils"
 	"log"
 	"net/http"
@@ -82,11 +82,11 @@ func Login(c *gin.Context) {
 	response, err := services.Login(loginData)
 	if response.Err || err != nil {
 		c.JSON(response.Code, gin.H{"error": response.Message})
-	}else{
+	} else {
 		c.Writer.Header().Set("Authorization", "Bearer "+response.Token)
 		c.JSON(response.Code, gin.H{
 			"message": response.Message,
-			"token": response.Token,
+			"token":   response.Token,
 		})
 	}
 }
@@ -150,6 +150,7 @@ func UpdateUser(c *gin.Context) {
 
 	// Get username from JWT token
 	username, exists := c.Get("username")
+	fmt.Println(username, "aaaaaa")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
