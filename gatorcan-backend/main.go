@@ -4,11 +4,14 @@ import (
 	"gatorcan-backend/database"
 	"gatorcan-backend/models"
 	"gatorcan-backend/routes"
+	"gatorcan-backend/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+
+	utils.Log().Println("Application started")
 
 	database.Connect()
 
