@@ -11,7 +11,9 @@ import (
 
 func main() {
 
-	utils.Log().Println("Application started")
+	logger := utils.Log()
+
+	logger.Println("Application started")
 
 	database.Connect()
 
@@ -21,7 +23,7 @@ func main() {
 	router := gin.Default()
 
 	// Register routes
-	routes.UserRoutes(router)
+	routes.UserRoutes(router, logger)
 
 	router.Run(":8080")
 }

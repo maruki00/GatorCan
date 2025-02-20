@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"gatorcan-backend/utils"
+	"log"
 	"net/http"
 	"strings"
 
@@ -9,14 +10,14 @@ import (
 )
 
 // AuthMiddleware validates JWT token and checks for required roles
-func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
+func AuthMiddleware(logger *log.Logger, requiredRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		utils.Log().Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
+		logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
 			c.Abort()
-			utils.Log().Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
+			logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
 			return
 		}
 
@@ -26,7 +27,7 @@ func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
-			utils.Log().Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
+			logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
 			return
 		}
 
@@ -38,7 +39,7 @@ func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 		for _, role := range claims.Roles {
 			if role == "admin" {
 				c.Next()
-				utils.Log().Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
+				logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
 				return
 			}
 		}
@@ -59,7 +60,7 @@ func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 		for _, userRole := range claims.Roles {
 			if _, exists := requiredRolesMap[userRole]; exists {
 				c.Next()
-				utils.Log().Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
+				logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
 				return
 			}
 		}
@@ -67,7 +68,7 @@ func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 		// If no matching role is found, deny access
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized access"})
 		c.Abort()
-		utils.Log().Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
+		logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
 
 	}
 }
