@@ -69,12 +69,16 @@ func CreateUser(c *gin.Context) {
 }
 
 // Handler function for the login route
-func Login(c *gin.Context) {
+func Login(c *gin.Context, logger *log.Logger) {
+
+	logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
+
 	var loginData *dtos.LoginRequestDTO
 
 	// Bind JSON data to loginData struct
 	if err := c.ShouldBindJSON(&loginData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		logger.Printf("Failed to bind JSON data: %v %d", err, c.Writer.Status())
 		return
 	}
 
@@ -82,12 +86,14 @@ func Login(c *gin.Context) {
 	response, err := services.Login(loginData)
 	if response.Err || err != nil {
 		c.JSON(response.Code, gin.H{"error": response.Message})
+		logger.Printf("Login Service Error: %v %d", err, c.Writer.Status())
 	} else {
 		c.Writer.Header().Set("Authorization", "Bearer "+response.Token)
 		c.JSON(response.Code, gin.H{
 			"message": response.Message,
 			"token":   response.Token,
 		})
+		logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
 	}
 }
 

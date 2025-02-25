@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"gatorcan-backend/utils"
+	"log"
 	"net/http"
 	"strings"
 
@@ -9,12 +10,14 @@ import (
 )
 
 // AuthMiddleware validates JWT token and checks for required roles
-func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
+func AuthMiddleware(logger *log.Logger, requiredRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
 			c.Abort()
+			logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
 			return
 		}
 
@@ -24,6 +27,7 @@ func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
+			logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
 			return
 		}
 
@@ -31,10 +35,11 @@ func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 		c.Set("username", claims.Username)
 		c.Set("roles", claims.Roles)
 
-		// ✅ If the user is an admin, allow access to everything
+		// If the user is an admin, allow access to everything
 		for _, role := range claims.Roles {
 			if role == "admin" {
 				c.Next()
+				logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
 				return
 			}
 		}
@@ -55,6 +60,7 @@ func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 		for _, userRole := range claims.Roles {
 			if _, exists := requiredRolesMap[userRole]; exists {
 				c.Next()
+				logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
 				return
 			}
 		}
@@ -62,5 +68,7 @@ func AuthMiddleware(requiredRoles ...string) gin.HandlerFunc {
 		// If no matching role is found, deny access
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized access"})
 		c.Abort()
+		logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
+
 	}
 }

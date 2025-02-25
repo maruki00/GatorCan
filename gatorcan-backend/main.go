@@ -4,11 +4,16 @@ import (
 	"gatorcan-backend/database"
 	"gatorcan-backend/models"
 	"gatorcan-backend/routes"
+	"gatorcan-backend/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+
+	logger := utils.Log()
+
+	logger.Println("Application started")
 
 	database.Connect()
 
@@ -18,7 +23,7 @@ func main() {
 	router := gin.Default()
 
 	// Register routes
-	routes.UserRoutes(router)
+	routes.UserRoutes(router, logger)
 
 	router.Run(":8080")
 }
