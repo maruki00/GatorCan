@@ -17,6 +17,8 @@ type Enrollment struct {
 	Status         string `gorm:"default:'pending';not null"` // 'pending', 'approved', or 'rejected'
 	EnrollmentDate string `gorm:"default:current_timestamp"`
 	ApprovalDate   string
+	User           User   `gorm:"foreignkey:UserID"`
+	Course         Course `gorm:"foreignkey:CourseID"`
 }
 
 func (e *Enrollment) Create(db *gorm.DB) error {

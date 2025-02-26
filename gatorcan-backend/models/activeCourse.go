@@ -11,9 +11,9 @@ type ActiveCourse struct {
 	EndDate      string `gorm:"not null"`
 	CreatedAt    string `gorm:"default:current_timestamp"`
 	UpdatedAt    string `gorm:"default:current_timestamp"`
+	IsActive     bool   `gorm:"default:true"`
 	Instructor   User   `gorm:"foreignkey:InstructorID"`
 	Course       Course `gorm:"foreignkey:CourseID"`
-	IsActive     bool   `gorm:"default:true"`
 }
 
 func (c *ActiveCourse) Create(db *gorm.DB) error {
