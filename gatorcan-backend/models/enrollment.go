@@ -2,6 +2,14 @@ package models
 
 import "gorm.io/gorm"
 
+type EnrollmentRequestStatus string
+
+const (
+	Pending  EnrollmentRequestStatus = "pending"
+	Approved EnrollmentRequestStatus = "approved"
+	Rejected EnrollmentRequestStatus = "rejected"
+)
+
 type Enrollment struct {
 	ID             uint   `gorm:"primary_key"`
 	UserID         uint   `gorm:"not null"`
@@ -9,8 +17,6 @@ type Enrollment struct {
 	Status         string `gorm:"default:'pending';not null"` // 'pending', 'approved', or 'rejected'
 	EnrollmentDate string `gorm:"default:current_timestamp"`
 	ApprovalDate   string
-	User           User   `gorm:"foreignkey:UserID"`
-	Course         Course `gorm:"foreignkey:CourseID"`
 }
 
 func (e *Enrollment) Create(db *gorm.DB) error {
