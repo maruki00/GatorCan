@@ -39,4 +39,11 @@ func UserRoutes(router *gin.Engine, logger *log.Logger) {
 	{
 		//instructorRoutes.POST("/upload-assignment", UploadAssignmentHandler)
 	}
+
+	courseGroup := router.Group("/courses")
+	courseGroup.Use(middleware.AuthMiddleware(logger, string(models.Student)))
+	{
+		courseGroup.GET("/enrolled", controllers.GetEnrolledCourses)
+		//courseGroup.POST("/enroll", controllers.EnrollCourse)
+	}
 }
