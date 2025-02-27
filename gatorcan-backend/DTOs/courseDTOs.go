@@ -1,10 +1,13 @@
 package dtos
 
+import "time"
+
 type EnrolledCoursesResponseDTO struct {
-	CourseName        string
-	CourseID          uint
-	CourseStartDate   string
-	CourseEndDate     string
-	CourseDescription string
-	InstructorName    string
+	Name            string
+	ID              uint
+	StartDate       time.Time
+	EndDate         time.Time
+	Description     string
+	InstructorName  string
+	InstructorEmail string
 }
