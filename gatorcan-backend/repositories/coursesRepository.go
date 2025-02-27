@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"errors"
+	"gatorcan-backend/Dtos"
 	"gatorcan-backend/database"
 	"gatorcan-backend/models"
 )
@@ -19,7 +20,7 @@ func NewCourseRepository() CourseRepository {
 	return &courseRepository{}
 }
 
-func (r *courseRepository) GetEnrolledCourses(username string) ([]models.Course, error) {
+func (r *courseRepository) GetEnrolledCourses(username string) ([]dtos.EnrolledCoursesResponseDTO, error) {
 	// Fetch user from DB
 	var user models.User
 	if err := database.DB.Preload("Roles").Where("username = ?", username).First(&user).Error; err != nil {
@@ -34,9 +35,16 @@ func (r *courseRepository) GetEnrolledCourses(username string) ([]models.Course,
 		return nil, errors.New("Failed to fetch enrolled courses")
 	}
 
-	var courses []models.Course
+	var courses []dtos.EnrolledCoursesResponseDTO
 	for _, enrollment := range enrollments {
-		courses = append(courses, enrollment.ActiveCourse.Course)
+		var enrolledCourse dtos.EnrolledCoursesResponseDTO
+		enrolledCourse.CourseID = enrollment.ActiveCourse.Course.ID
+		enrolledCourse.CourseName = enrollment.ActiveCourse.Course.Name
+		enrolledCourse.CourseDescription = enrollment.ActiveCourse.Course.Description
+		enrolledCourse.StartDate = enrollment.ActiveCourse.StartDate
+		enrolledCourse.EndDate = enrollment.ActiveCourse.EndDate
+		enrolledCourse.Instructor = enrollment.ActiveCourse.InstructorID
+		courses = append(courses, enrolledCourse)
 	}
 
 	return courses, nil
