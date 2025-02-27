@@ -245,3 +245,29 @@ func UpdateRoles(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User roles updated successfully"})
 }
+
+func GetEnrolledCourses(c *gin.Context) {
+	// Get username from JWT token
+	username, exists := c.Get("username")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Fetch user from DB
+	var user models.User
+	if err := database.DB.Preload("Roles").Where("username = ?", username).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Fetch enrolled courses
+	var enrollments []models.Enrollment
+	if err := database.DB.Preload("ActiveCourse.Course").Where("user_id = ?", user.ID).Find(&enrollments).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch enrolled courses"})
+		return
+	}
+
+	// Return enrolled courses
+	c.JSON(http.StatusOK, gin.H{"enrolled_courses": enrollments})
+}
