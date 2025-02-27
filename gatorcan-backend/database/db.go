@@ -23,7 +23,7 @@ func Connect() {
 
 	log.Println("SQLite database connected successfully")
 
-	err = DB.AutoMigrate(&models.User{})
+	err = DB.AutoMigrate(&models.User{}, &models.Course{}, &models.Enrollment{}, &models.ActiveCourse{}, &models.Role{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
