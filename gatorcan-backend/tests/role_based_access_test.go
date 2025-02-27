@@ -15,7 +15,7 @@ import (
 
 func setupRouter() *gin.Engine {
 	router := gin.Default()
-	routes.UserRoutes(router)
+	routes.UserRoutes(router, utils.Log())
 	return router
 }
 
