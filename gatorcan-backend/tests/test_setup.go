@@ -6,18 +6,22 @@ import (
 	"gatorcan-backend/middleware"
 	"gatorcan-backend/models"
 
+	"gatorcan-backend/utils"
 	"github.com/gin-gonic/gin"
 )
 
 // SetupTestRouter initializes a test Gin router
 func SetupTestRouter() *gin.Engine {
+	logger := utils.Log()
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
-	router.POST("/login", controllers.Login)
+	router.POST("/login", func(c *gin.Context) {
+		controllers.Login(c, logger)
+	})
 
 	// Admin-only Routes
 	adminGroup := router.Group("/admin")
-	adminGroup.Use(middleware.AuthMiddleware(string(models.Admin)))
+	adminGroup.Use(middleware.AuthMiddleware(logger, string(models.Admin)))
 	{
 		adminGroup.POST("/add_user", controllers.CreateUser)
 		adminGroup.DELETE("/:username", controllers.DeleteUser)
@@ -25,7 +29,7 @@ func SetupTestRouter() *gin.Engine {
 
 	}
 	userGroup := router.Group("/user")
-	userGroup.Use(middleware.AuthMiddleware(string(models.Student)))
+	userGroup.Use(middleware.AuthMiddleware(logger, string(models.Student)))
 	{
 		userGroup.GET("/:username", controllers.GetUserDetails)
 		userGroup.PUT("/update", controllers.UpdateUser)
@@ -34,7 +38,7 @@ func SetupTestRouter() *gin.Engine {
 
 	// Instructor-only Routes
 	instructorRoutes := router.Group("/instructor")
-	instructorRoutes.Use(middleware.AuthMiddleware(string(models.Instructor)))
+	instructorRoutes.Use(middleware.AuthMiddleware(logger, string(models.Instructor)))
 	{
 		//instructorRoutes.POST("/upload-assignment", UploadAssignmentHandler)
 	}
