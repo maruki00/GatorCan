@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	dtos "gatorcan-backend/DTOs"
 	"gatorcan-backend/database"
 	"gatorcan-backend/models"
+	"gatorcan-backend/repositories"
 	"gatorcan-backend/services"
 	"gatorcan-backend/utils"
 	"log"
@@ -246,7 +248,7 @@ func UpdateRoles(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User roles updated successfully"})
 }
 
-func GetEnrolledCourses(c *gin.Context) {
+func GetEnrolledCourses(c *gin.Context, logger *log.Logger) {
 	// Get username from JWT token
 	username, exists := c.Get("username")
 	if !exists {
@@ -254,17 +256,14 @@ func GetEnrolledCourses(c *gin.Context) {
 		return
 	}
 
-	// Fetch user from DB
-	var user models.User
-	if err := database.DB.Preload("Roles").Where("username = ?", username).First(&user).Error; err != nil {
+	enrollments, err := repositories.NewCourseRepository().GetEnrolledCourses(username.(string))
+	if err == errors.New("User not found") {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		logger.Printf("User not found: %s %d", username, c.Writer.Status())
 		return
-	}
-
-	// Fetch enrolled courses
-	var enrollments []models.Enrollment
-	if err := database.DB.Preload("ActiveCourse.Course").Where("user_id = ?", user.ID).Find(&enrollments).Error; err != nil {
+	} else if err == errors.New("Failed to fetch enrolled courses") {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch enrolled courses"})
+		logger.Printf("Failed to fetch enrolled courses: %s %d", username, c.Writer.Status())
 		return
 	}
 
