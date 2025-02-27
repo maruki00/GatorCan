@@ -257,16 +257,16 @@ func GetEnrolledCourses(c *gin.Context, logger *log.Logger) {
 	}
 
 	enrollments, err := repositories.NewCourseRepository().GetEnrolledCourses(username.(string))
-	if err == errors.New("User not found") {
+	if err == errors.New("user not found") {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		logger.Printf("User not found: %s %d", username, c.Writer.Status())
+		logger.Printf("user not found: %s %d", username, c.Writer.Status())
 		return
-	} else if err == errors.New("Failed to fetch enrolled courses") {
+	} else if err == errors.New("failed to fetch enrolled courses") {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch enrolled courses"})
-		logger.Printf("Failed to fetch enrolled courses: %s %d", username, c.Writer.Status())
+		logger.Printf("failed to fetch enrolled courses: %s %d", username, c.Writer.Status())
 		return
 	}
 
 	// Return enrolled courses
-	c.JSON(http.StatusOK, gin.H{"enrolled_courses": enrollments})
+	c.JSON(http.StatusOK, enrollments)
 }

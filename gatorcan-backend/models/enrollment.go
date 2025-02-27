@@ -1,6 +1,9 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+	"time"
+)
 
 type EnrollmentRequestStatus string
 
@@ -11,14 +14,14 @@ const (
 )
 
 type Enrollment struct {
-	ID             uint   `gorm:"primary_key"`
-	UserID         uint   `gorm:"not null"`
-	CourseID       uint   `gorm:"not null"`
-	Status         string `gorm:"default:'pending';not null"` // 'pending', 'approved', or 'rejected'
-	EnrollmentDate string `gorm:"default:current_timestamp"`
-	ApprovalDate   string
-	User           User   `gorm:"foreignkey:UserID"`
-	Course         Course `gorm:"foreignkey:CourseID"`
+	ID             uint                    `gorm:"primary_key"`
+	UserID         uint                    `gorm:"not null"`
+	ActiveCourseID uint                    `gorm:"not null"`
+	Status         EnrollmentRequestStatus `gorm:"default:'pending';not null"`
+	EnrollmentDate time.Time               `gorm:"autoCreateTime"`
+	ApprovalDate   time.Time
+	ActiveCourse   ActiveCourse `gorm:"foreignKey:ActiveCourseID"`
+	User           User         `gorm:"foreignKey:UserID"`
 }
 
 func (e *Enrollment) Create(db *gorm.DB) error {
