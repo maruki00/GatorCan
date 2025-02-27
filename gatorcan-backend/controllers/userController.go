@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	dtos "gatorcan-backend/DTOs"
 	"gatorcan-backend/database"
 	"gatorcan-backend/models"
+	"gatorcan-backend/repositories"
 	"gatorcan-backend/services"
 	"gatorcan-backend/utils"
 	"log"
@@ -244,4 +246,27 @@ func UpdateRoles(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "User roles updated successfully"})
+}
+
+func GetEnrolledCourses(c *gin.Context, logger *log.Logger) {
+	// Get username from JWT token
+	username, exists := c.Get("username")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	enrollments, err := repositories.NewCourseRepository().GetEnrolledCourses(username.(string))
+	if err == errors.New("User not found") {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		logger.Printf("User not found: %s %d", username, c.Writer.Status())
+		return
+	} else if err == errors.New("Failed to fetch enrolled courses") {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch enrolled courses"})
+		logger.Printf("Failed to fetch enrolled courses: %s %d", username, c.Writer.Status())
+		return
+	}
+
+	// Return enrolled courses
+	c.JSON(http.StatusOK, gin.H{"enrolled_courses": enrollments})
 }
