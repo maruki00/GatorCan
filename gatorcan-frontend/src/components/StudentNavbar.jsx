@@ -14,9 +14,13 @@ import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
 import LogoutRoundedIcon from "@mui/icons-material/Logout";
 
-function MyListItem({ icon, name }) {
+function MyListItem({ icon, name, path, handleNavigate }) {
   return (
-    <ListItem button sx={{ flexDirection: "column", alignItems: "center" }}>
+    <ListItem
+      button
+      sx={{ flexDirection: "column", alignItems: "center" }}
+      onClick = {() => handleNavigate(path)}
+    >
       <ListItemIcon
         sx={{
           minWidth: "unset",
@@ -26,18 +30,27 @@ function MyListItem({ icon, name }) {
       >
         {icon}
       </ListItemIcon>
-      <ListItemText primary={name} />
+      <ListItemText
+        primary={name}
+        sx={{
+          "& .MuiTypography-root": { fontSize: "0.7em" },
+        }}
+      />
     </ListItem>
   );
 }
 
 function StudentNavbar() {
-    
-    const navigate = useNavigate();
 
     const handleLogout = () => {
       localStorage.clear();
       navigate("/login", { replace: true });
+    };
+
+    const navigate = useNavigate();
+
+    const handleNavigate = (path) => {
+      navigate(path, { replace: false });
     };
 
   return (
@@ -71,6 +84,8 @@ function StudentNavbar() {
           <MyListItem
             icon={<AccountCircleIcon sx={{ fontSize: 40, color: "white" }} />}
             name="Profile"
+            path="/student-profile"
+            handleNavigate={handleNavigate}
           />
           <MyListItem
             icon={
@@ -79,6 +94,8 @@ function StudentNavbar() {
               />
             }
             name="Dashboard"
+            path="/student-dashboard"
+            handleNavigate={handleNavigate}
           />
           <MyListItem
             icon={
@@ -87,18 +104,24 @@ function StudentNavbar() {
               />
             }
             name="Courses"
+            path="/student-courses"
+            handleNavigate={handleNavigate}
           />
           <MyListItem
             icon={
               <CalendarMonthRoundedIcon sx={{ fontSize: 40, color: "white" }} />
             }
             name="Calendar"
+            path="/student-calendar"
+            handleNavigate={handleNavigate}
           />
           <MyListItem
             icon={
               <MailOutlineRoundedIcon sx={{ fontSize: 40, color: "white" }} />
             }
             name="Inbox"
+            path="/student-inbox"
+            handleNavigate={handleNavigate}
           />
         </List>
       </Box>
