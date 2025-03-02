@@ -67,6 +67,9 @@ func SetupTestRouter() *gin.Engine {
 		courseGroup.GET("/", func(c *gin.Context) {
 			controllers.GetCourses(c, logger)
 		})
+		courseGroup.POST("/enroll", func(c *gin.Context) {
+			controllers.EnrollInCourse(c, logger)
+		})
 	}
 	return router
 }
@@ -83,11 +86,16 @@ func SetupTestDB() {
 	database.DB.Exec("DELETE FROM users") // Clear users table
 	database.DB.Exec("DELETE FROM roles") // Clear roles table
 	for i := 1; i <= 30; i++ {
+		capacity := 50 + i // Example: Capacity varies between 51-80
+		enrollmentCount := 0
+
 		course := models.Course{
 			Name:        fmt.Sprintf("Course %d", i),
 			Description: fmt.Sprintf("Description for course %d", i),
 			StartDate:   time.Now(),
-			EndDate:     time.Now().AddDate(0, 1, 0), // End date one month later.
+			EndDate:     time.Now().AddDate(0, 1, 0), // Ends in 1 month
+			Capacity:    capacity,
+			Enrolled:    enrollmentCount,
 		}
 		database.DB.Create(&course)
 	}

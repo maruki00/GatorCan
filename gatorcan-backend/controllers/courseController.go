@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	dtos "gatorcan-backend/DTOs"
 	"gatorcan-backend/services"
 	"log"
 	"net/http"
@@ -61,4 +62,47 @@ func GetCourses(c *gin.Context, logger *log.Logger) {
 
 	// Return courses
 	c.JSON(http.StatusOK, courses)
+}
+
+func EnrollInCourse(c *gin.Context, logger *log.Logger) {
+	username, exists := c.Get("username")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var request dtos.EnrollRequestDTO
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	// Validate courseID
+	courseID := request.CourseID
+	if courseID < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+		return
+	}
+
+	err := services.EnrollUser(logger, username.(string), courseID)
+	if err == errors.New("user not found") {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	} else if err == errors.New("course not found") {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
+		return
+	} else if err == errors.New("enrollment request already exists") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Enrollment request already exists"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to request enrollment"})
+		return
+	}
+
+	// Respond with a success message using the EnrollmentResponseDTO
+	response := dtos.EnrollmentResponseDTO{
+		Message: "Enrollment requested successfully",
+	}
+
+	c.JSON(http.StatusCreated, response)
 }
