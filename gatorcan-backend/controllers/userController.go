@@ -2,9 +2,7 @@ package controllers
 
 import (
 	"fmt"
-	"gatorcan-backend/DTOs"
-	"gatorcan-backend/database"
-	"gatorcan-backend/models"
+	dtos "gatorcan-backend/DTOs"
 	"gatorcan-backend/services"
 	"gatorcan-backend/utils"
 	"log"
@@ -13,76 +11,46 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserRequest struct {
-	Username string   `json:"username" form:"username"`
-	Email    string   `json:"email" form:"email"`
-	Password string   `json:"password" form:"password"`
-	Roles    []string `json:"roles" form:"roles"`
-}
+func CreateUser(c *gin.Context, logger *log.Logger) {
 
-func CreateUser(c *gin.Context) {
+	logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
 
-	var user UserRequest
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var userRequest *dtos.UserRequestDTO
+
+	if err := c.ShouldBindJSON(&userRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		logger.Printf("Failed to bind JSON data: %v %d", err, c.Writer.Status())
 		return
 	}
 
-	if !utils.IsValidEmail(user.Email) {
+	if !utils.IsValidEmail(userRequest.Email) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
 		return
 	}
 
-	var count int64
-	database.DB.Model(&models.User{}).Where("username = ? OR email = ?", user.Username, user.Email).Count(&count)
-	if count > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User already exists"})
-		return
-	}
-
-	hashedPassword, err := utils.HashPassword(user.Password)
+	response, err := services.CreateUser(userRequest)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		c.JSON(response.Code, gin.H{"error": response.Message})
+		logger.Printf("Error in CreateUser service: %v", err)
 		return
 	}
 
-	var newUserRoles []*models.Role
-	if err := database.DB.Where("name IN ?", user.Roles).Find(&newUserRoles).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "One or more roles not found"})
-		return
-	}
-
-	newUser := models.User{
-		Username: user.Username,
-		Email:    user.Email,
-		Password: hashedPassword,
-		Roles:    newUserRoles,
-	}
-
-	if err := database.DB.Create(&newUser).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-		return
-	}
-
-	log.Printf("User created: %s, Email: %s", newUser.Username, newUser.Email)
-	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("User %s has been created successfully", newUser.Username)})
+	logger.Printf("User created successfully: %s", userRequest.Username)
+	c.JSON(response.Code, gin.H{"message": response.Message})
 }
 
-// Handler function for the login route
 func Login(c *gin.Context, logger *log.Logger) {
 
 	logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
 
 	var loginData *dtos.LoginRequestDTO
 
-	// Bind JSON data to loginData struct
 	if err := c.ShouldBindJSON(&loginData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		logger.Printf("Failed to bind JSON data: %v %d", err, c.Writer.Status())
 		return
 	}
 
-	// Call the login service
 	response, err := services.Login(loginData)
 	if response.Err || err != nil {
 		c.JSON(response.Code, gin.H{"error": response.Message})
@@ -97,151 +65,86 @@ func Login(c *gin.Context, logger *log.Logger) {
 	}
 }
 
-func GetUserDetails(c *gin.Context) {
-	// Get the username from the route parameter
+func GetUserDetails(c *gin.Context, logger *log.Logger) {
+	logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
 	username := c.Param("username")
-
-	// Query the database to get the user by username, including their roles
-	var user models.User
-	if err := database.DB.Preload("Roles").Where("username = ?", username).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+	user, err := services.GetUserDetails(username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		logger.Printf("Error in GetUserDetails service: %v", err)
 		return
 	}
-
-	// Create a slice to hold role names
 	var roleNames []string
 	for _, role := range user.Roles {
 		roleNames = append(roleNames, role.Name)
 	}
 
-	// Return user details including the roles (excluding password for security reasons)
 	c.JSON(http.StatusOK, gin.H{
 		"username":   user.Username,
 		"email":      user.Email,
-		"roles":      roleNames, // Use the slice of role names
+		"roles":      roleNames,
 		"created_at": user.CreatedAt,
 	})
 }
 
-func DeleteUser(c *gin.Context) {
+func DeleteUser(c *gin.Context, logger *log.Logger) {
 
 	username := c.Param("username")
 
-	// Check if the user exists before deleting
-	var user models.User
-	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
+	logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
 
-	// Delete the user
-	if err := database.DB.Delete(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
+	err := services.DeleteUser(username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		logger.Printf("Error in Deleting User: %v", err)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("User %s has been deleted successfully", username)})
 }
 
-func UpdateUser(c *gin.Context) {
-	var request struct {
-		OldPassword string `json:"old_password" binding:"required"`
-		NewPassword string `json:"new_password" binding:"required,min=8"`
-	}
-
-	if err := c.ShouldBindJSON(&request); err != nil {
+func UpdateUser(c *gin.Context, logger *log.Logger) {
+	var updateData dtos.UpdateUserDTO
+	if err := c.ShouldBindJSON(&updateData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		logger.Printf("Failed to bind JSON data: %v", err)
 		return
 	}
 
-	// Get username from JWT token
-	username, exists := c.Get("username")
-	fmt.Println(username, "aaaaaa")
+	usernameInterface, exists := c.Get("username")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-
-	// Fetch user from DB
-	var user models.User
-	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+	username, ok := usernameInterface.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid username in context"})
 		return
 	}
 
-	// Verify old password
-	if !utils.VerifyPassword(user.Password, request.OldPassword) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect old password"})
+	err := services.UpdateUser(username, &updateData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		logger.Printf("Error in UpdateUser service: %v", err)
 		return
 	}
 
-	// Hash the new password
-	hashedPassword, _ := utils.HashPassword(request.NewPassword)
-	user.Password = hashedPassword
-
-	// Save updated password
-	if err := database.DB.Save(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
+	logger.Printf("User updated successfully: %s", username)
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("User updated successfully: %s", username)})
 }
 
-func UpdateRoles(c *gin.Context) {
-	var request struct {
-		Username string   `json:"username" binding:"required"`
-		Roles    []string `json:"roles" binding:"required"`
-	}
-
-	// Validate request body
-	if err := c.ShouldBindJSON(&request); err != nil {
+func UpdateRoles(c *gin.Context, logger *log.Logger) {
+	var updateRolesDTO dtos.UpdateUserRolesDTO
+	if err := c.ShouldBindJSON(&updateRolesDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	// Fetch user
-	var user models.User
-	if err := database.DB.Where("username = ?", request.Username).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+	err := services.UpdateRoles(updateRolesDTO.Username, updateRolesDTO.Roles)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Fetch roles in a single query
-	var roles []models.Role
-	if err := database.DB.Where("name IN (?)", request.Roles).Find(&roles).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch roles"})
-		return
-	}
-
-	// Check for missing roles
-	foundRoles := make(map[string]bool)
-	for _, role := range roles {
-		foundRoles[role.Name] = true
-	}
-
-	var missingRoles []string
-	for _, role := range request.Roles {
-		if !foundRoles[role] {
-			missingRoles = append(missingRoles, role)
-		}
-	}
-
-	if len(missingRoles) > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Roles not found: %v", missingRoles)})
-		return
-	}
-
-	// Update user's roles
-	user.Roles = make([]*models.Role, len(roles))
-	for i := range roles {
-		user.Roles[i] = &roles[i]
-	}
-
-	if err := database.DB.Save(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update roles"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "User roles updated successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("User roles updated successfully for %s", updateRolesDTO.Username)})
 }

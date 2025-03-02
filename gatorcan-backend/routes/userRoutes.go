@@ -20,16 +20,26 @@ func UserRoutes(router *gin.Engine, logger *log.Logger) {
 	adminGroup := router.Group("/admin")
 	adminGroup.Use(middleware.AuthMiddleware(logger, string(models.Admin)))
 	{
-		adminGroup.POST("/add_user", controllers.CreateUser)
-		adminGroup.DELETE("/:username", controllers.DeleteUser)
-		adminGroup.PUT("/update_role", controllers.UpdateRoles)
+		adminGroup.POST("/add_user", func(c *gin.Context) {
+			controllers.CreateUser(c, logger)
+		})
+		adminGroup.DELETE("/:username", func(c *gin.Context) {
+			controllers.DeleteUser(c, logger)
+		})
+		adminGroup.DELETE("/update_role", func(c *gin.Context) {
+			controllers.UpdateRoles(c, logger)
+		})
 
 	}
 	userGroup := router.Group("/user")
 	userGroup.Use(middleware.AuthMiddleware(logger, string(models.Student)))
 	{
-		userGroup.GET("/:username", controllers.GetUserDetails)
-		userGroup.PUT("/update", controllers.UpdateUser)
+		userGroup.GET("/:username", func(c *gin.Context) {
+			controllers.GetUserDetails(c, logger)
+		})
+		userGroup.PUT("/update", func(c *gin.Context) {
+			controllers.UpdateUser(c, logger)
+		})
 
 	}
 
