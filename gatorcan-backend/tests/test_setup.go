@@ -1,14 +1,17 @@
 package tests
 
 import (
+	"fmt"
 	"gatorcan-backend/controllers"
 	"gatorcan-backend/database"
 	"gatorcan-backend/middleware"
 	"gatorcan-backend/models"
+	"time"
 
 	"gatorcan-backend/utils"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // SetupTestRouter initializes a test Gin router
@@ -53,6 +56,18 @@ func SetupTestRouter() *gin.Engine {
 	{
 		//instructorRoutes.POST("/upload-assignment", UploadAssignmentHandler)
 	}
+
+	courseGroup := router.Group("/courses")
+	courseGroup.Use(middleware.AuthMiddleware(logger, string(models.Student)))
+	{
+		courseGroup.GET("/enrolled", func(c *gin.Context) {
+			controllers.GetEnrolledCourses(c, logger)
+		})
+		//courseGroup.POST("/enroll", controllers.EnrollCourse)
+		courseGroup.GET("/", func(c *gin.Context) {
+			controllers.GetCourses(c, logger)
+		})
+	}
 	return router
 }
 
@@ -67,4 +82,38 @@ func SetupTestDB() {
 	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'teaching_assistant');")
 	database.DB.Exec("DELETE FROM users") // Clear users table
 	database.DB.Exec("DELETE FROM roles") // Clear roles table
+	for i := 1; i <= 30; i++ {
+		course := models.Course{
+			Name:        fmt.Sprintf("Course %d", i),
+			Description: fmt.Sprintf("Description for course %d", i),
+			StartDate:   time.Now(),
+			EndDate:     time.Now().AddDate(0, 1, 0), // End date one month later.
+		}
+		database.DB.Create(&course)
+	}
+
+	studentRole := models.Role{Name: "student"}
+	adminRole := models.Role{Name: "admin"}
+	if err := database.DB.Create(&studentRole).Error; err != nil {
+		fmt.Printf("Failed to create 'student' role: %v", err)
+	}
+	if err := database.DB.Create(&adminRole).Error; err != nil {
+		fmt.Printf("Failed to create 'admin' role: %v", err)
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	if err != nil {
+		fmt.Printf("Failed to hash password: %v", err)
+	}
+
+	testUser := models.User{
+		Username: "teststudent",
+		Email:    "teststudent@example.com",
+		Password: string(hashedPassword),
+		Roles:    []*models.Role{&studentRole}, // Assign "student" role
+	}
+	if err := database.DB.Create(&testUser).Error; err != nil {
+		fmt.Printf("Failed to create test user: %v\n", err)
+
+	}
 }

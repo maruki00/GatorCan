@@ -57,5 +57,8 @@ func UserRoutes(router *gin.Engine, logger *log.Logger) {
 			controllers.GetEnrolledCourses(c, logger)
 		})
 		//courseGroup.POST("/enroll", controllers.EnrollCourse)
+		courseGroup.GET("/", func(c *gin.Context) {
+			controllers.GetCourses(c, logger)
+		})
 	}
 }

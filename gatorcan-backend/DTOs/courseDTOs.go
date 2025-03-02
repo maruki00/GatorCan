@@ -11,3 +11,11 @@ type EnrolledCoursesResponseDTO struct {
 	InstructorName  string
 	InstructorEmail string
 }
+
+type CourseResponseDTO struct {
+	ID          uint      `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	StartDate   time.Time `json:"start_date"`
+	EndDate     time.Time `json:"end_date"`
+}
