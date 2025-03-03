@@ -16,8 +16,8 @@ func Login(loginData *dtos.LoginRequestDTO) (*dtos.LoginResponseDTO, error) {
 	// get user from the database
 	user, err := repositories.NewUserRepository().GetUserByUsername(loginData.Username)
 	if err != nil {
-		response.Code = http.StatusInternalServerError
-		response.Message = "Failed to get user data"
+		response.Code = http.StatusNotFound
+		response.Message = "Invalid_username"
 		response.Err = true
 		return &response, err
 	}

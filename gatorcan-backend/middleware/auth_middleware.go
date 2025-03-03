@@ -35,15 +35,6 @@ func AuthMiddleware(logger *log.Logger, requiredRoles ...string) gin.HandlerFunc
 		c.Set("username", claims.Username)
 		c.Set("roles", claims.Roles)
 
-		// If the user is an admin, allow access to everything
-		for _, role := range claims.Roles {
-			if role == "admin" {
-				c.Next()
-				logger.Printf("Response: %s %s %d", c.Request.Method, c.Request.URL.Path, c.Writer.Status())
-				return
-			}
-		}
-
 		// If no roles are required, allow access
 		if len(requiredRoles) == 0 {
 			c.Next()

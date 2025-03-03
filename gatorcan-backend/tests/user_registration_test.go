@@ -120,6 +120,7 @@ func TestCreateUserFailMissingFields(t *testing.T) {
 	// Expect Bad Request (400)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "Invalid email format")
+	CloseTestDB()
 }
 
 // TestCreateUserFailUserExists ensures that a user with the same username or email cannot be registered
@@ -163,6 +164,7 @@ func TestCreateUserFailUserExists(t *testing.T) {
 	// Expect Bad Request (400) with "User already exists" message
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "User already exists")
+	CloseTestDB()
 }
 
 // TestCreateUserFailInvalidEmail ensures the email format is valid
@@ -191,4 +193,5 @@ func TestCreateUserFailInvalidEmail(t *testing.T) {
 	// Expect Bad Request (400)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "Invalid email format")
+	CloseTestDB()
 }

@@ -18,8 +18,8 @@ func TestGetUserDetailsSuccess(t *testing.T) {
 	router := SetupTestRouter()
 
 	// Insert a test role into the database
-	userRole := models.Role{Name: "user"}
-	database.DB.Create(&userRole) // Ensure the role exists in DB
+	userRole := models.Role{Name: "student"}
+	//database.DB.Create(&userRole) // Ensure the role exists in DB
 
 	// Insert a test user with the role
 	adminToken, _ := utils.GenerateToken("adminuser", []string{"admin"})
@@ -66,6 +66,7 @@ func TestGetUserDetailsSuccess(t *testing.T) {
 
 	// Validate that the role "user" exists in the list
 	assert.Contains(t, roleNames, "user", "Expected role 'user' in response")
+	CloseTestDB()
 }
 
 // TestGetUserDetailsFailUnauthorized tests unauthorized access when no token is provided
@@ -81,6 +82,7 @@ func TestGetUserDetailsFailUnauthorized(t *testing.T) {
 	// Validate response
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, w.Body.String(), "Authorization token required")
+	CloseTestDB()
 }
 
 // TestGetUserDetailsFailUserNotFound tests when the requested user is not found
@@ -101,4 +103,6 @@ func TestGetUserDetailsFailUserNotFound(t *testing.T) {
 	// Validate response
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.Contains(t, w.Body.String(), "User not found")
+
+	CloseTestDB()
 }
