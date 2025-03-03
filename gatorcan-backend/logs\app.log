@@ -1,9 +1,0 @@
-INFO: 2025/03/02 12:14:02 main.go:16: Application started
-INFO: 2025/03/02 12:14:05 userController.go:74: Request: POST /login
-INFO: 2025/03/02 12:14:05 userController.go:96: Response: POST /login 200
-INFO: 2025/03/02 12:14:18 userController.go:74: Request: POST /login
-INFO: 2025/03/02 12:14:18 userController.go:96: Response: POST /login 200
-INFO: 2025/03/02 15:31:35 userController.go:74: Request: POST /login
-INFO: 2025/03/02 15:31:35 userController.go:96: Response: POST /login 200
-INFO: 2025/03/02 15:54:23 userController.go:74: Request: POST /login
-INFO: 2025/03/02 15:54:23 userController.go:96: Response: POST /login 200
