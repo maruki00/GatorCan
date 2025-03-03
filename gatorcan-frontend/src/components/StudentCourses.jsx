@@ -94,7 +94,15 @@ function StudentCourses() {
   const loadEnrolledCourses = async () => {
     setLoadingEnrolledCourses(true);
     const courses = [
-      
+      {
+        id: 1,
+        name: "Introduction to Python",
+        description: "Learn the basics of Python programming.",
+        created_at: "2024-07-11T05:30:46Z",
+        updated_at: "2024-07-22T05:30:46Z",
+        instructorName: "Inst1",
+        instructorEmail: "inst1@gmail.com"
+      },
     ];
     setEnrolledCourses(courses);
     setLoadingEnrolledCourses(false);
@@ -223,6 +231,23 @@ const CourseCard = ({ course, isEnrolled = false }) => {
           </p>
         </>
       ) : (
+        <button
+          style={{
+            alignSelf: "flex-end",
+            padding: "8px 12px",
+            backgroundColor: "#ff8c00", // Orange color
+            color: "#fff",
+            border: "none",
+            cursor: "pointer",
+            borderRadius: "4px",
+            marginTop: "15px",
+            position: "relative",
+            top: "-10px",
+          }}
+          onClick={() => null}
+        >
+          Enroll
+        </button>
           <div></div>
       )}
     </div>
