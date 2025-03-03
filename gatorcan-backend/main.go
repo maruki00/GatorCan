@@ -5,8 +5,10 @@ import (
 	"gatorcan-backend/models"
 	"gatorcan-backend/routes"
 	"gatorcan-backend/utils"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -25,5 +27,14 @@ func main() {
 	// Register routes
 	routes.UserRoutes(router, logger)
 
-	router.Run(":8080")
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, // Allow all origins
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	})
+
+	handler := c.Handler(router)
+
+	http.ListenAndServe(":8080", handler)
 }
