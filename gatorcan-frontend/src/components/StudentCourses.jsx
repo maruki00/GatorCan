@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import StudentNavbar from "./StudentNavbar";
+import CourseService from "../services/CourseService";
 
 function StudentCourses() {
   const [allCourses, setAllCourses] = useState([]);
@@ -14,100 +15,24 @@ function StudentCourses() {
 
   const loadCourses = async () => {
     setLoadingAllCourses(true);
-    const courses = [
-      {
-        id: 1,
-        name: "Introduction to Python",
-        description: "Learn the basics of Python programming.",
-        created_at: "2024-07-11T05:30:46Z",
-        updated_at: "2024-07-22T05:30:46Z",
-      },
-      {
-        id: 2,
-        name: "Advanced Java",
-        description: "Master Java programming with advanced topics.",
-        created_at: "2025-01-19T05:30:46Z",
-        updated_at: "2025-01-19T05:30:46Z",
-      },
-      {
-        id: 3,
-        name: "Machine Learning Basics",
-        description: "Understand the fundamentals of machine learning.",
-        created_at: "2024-11-23T05:30:46Z",
-        updated_at: "2024-12-21T05:30:46Z",
-      },
-      {
-        id: 4,
-        name: "Deep Learning Fundamentals",
-        description: "Dive into deep learning concepts and frameworks.",
-        created_at: "2024-04-05T05:30:46Z",
-        updated_at: "2024-04-27T05:30:46Z",
-      },
-      {
-        id: 5,
-        name: "Data Structures & Algorithms",
-        description: "Learn essential data structures and algorithms.",
-        created_at: "2024-08-06T05:30:46Z",
-        updated_at: "2024-08-07T05:30:46Z",
-      },
-      {
-        id: 6,
-        name: "Cloud Computing with AWS",
-        description: "Get hands-on experience with AWS cloud computing.",
-        created_at: "2024-06-14T05:30:46Z",
-        updated_at: "2024-07-10T05:30:46Z",
-      },
-      {
-        id: 7,
-        name: "Full Stack Web Development",
-        description: "Build full-stack web applications from scratch.",
-        created_at: "2024-10-01T05:30:46Z",
-        updated_at: "2024-10-21T05:30:46Z",
-      },
-      {
-        id: 8,
-        name: "Big Data Analytics",
-        description: "Analyze large datasets using modern big data tools.",
-        created_at: "2024-05-22T05:30:46Z",
-        updated_at: "2024-06-15T05:30:46Z",
-      },
-      {
-        id: 9,
-        name: "Cybersecurity Essentials",
-        description:
-          "Learn the principles of cybersecurity and best practices.",
-        created_at: "2024-12-12T05:30:46Z",
-        updated_at: "2025-01-10T05:30:46Z",
-      },
-      {
-        id: 10,
-        name: "React for Beginners",
-        description: "Start building dynamic web applications with React.",
-        created_at: "2024-09-15T05:30:46Z",
-        updated_at: "2024-09-29T05:30:46Z",
-      },
-    ];
+    const courses = await CourseService.fetchAllCourses();
     setAllCourses(courses || []);
     setLoadingAllCourses(false);
   };
 
   const loadEnrolledCourses = async () => {
     setLoadingEnrolledCourses(true);
-    const courses = [
-      {
-        id: 1,
-        name: "Introduction to Python",
-        description: "Learn the basics of Python programming.",
-        created_at: "2024-07-11T05:30:46Z",
-        updated_at: "2024-07-22T05:30:46Z",
-        instructorName: "Inst1",
-        instructorEmail: "inst1@gmail.com"
-      },
-    ];
+    const courses = await CourseService.fetchEnrolledCourses();
     setEnrolledCourses(courses);
     setLoadingEnrolledCourses(false);
   };
 
+  const handleEnroll = async (courseID) => {
+    const result = await CourseService.enrollInCourse(courseID);
+    if (result.success) {
+      loadEnrolledCourses();
+    }
+  };
   return (
     <>
       <StudentNavbar />
@@ -143,6 +68,7 @@ function StudentCourses() {
               <CourseCard
                 key={course.id}
                 course={course}
+                enrollInCourse={handleEnroll}
               />
             ))}
           </div>
@@ -174,6 +100,7 @@ function StudentCourses() {
   );
 }
 
+const CourseCard = ({ course, enrollInCourse, isEnrolled = false }) => {
 const CourseCard = ({ course, isEnrolled = false }) => {
   return (
     <div
@@ -244,6 +171,10 @@ const CourseCard = ({ course, isEnrolled = false }) => {
             position: "relative",
             top: "-10px",
           }}
+          onClick={() => enrollInCourse(course.id)}
+        >
+          Enroll
+        </button>
           onClick={() => null}
         >
           Enroll
