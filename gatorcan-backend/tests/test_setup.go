@@ -30,7 +30,7 @@ func SetupTestRouter() *gin.Engine {
 		adminGroup.DELETE("/:username", func(c *gin.Context) {
 			controllers.DeleteUser(c, logger)
 		})
-		adminGroup.DELETE("/update_role", func(c *gin.Context) {
+		adminGroup.PUT("/update_role", func(c *gin.Context) {
 			controllers.UpdateRoles(c, logger)
 		})
 
@@ -41,7 +41,7 @@ func SetupTestRouter() *gin.Engine {
 		userGroup.GET("/:username", func(c *gin.Context) {
 			controllers.GetUserDetails(c, logger)
 		})
-		userGroup.GET("/update", func(c *gin.Context) {
+		userGroup.PUT("/update", func(c *gin.Context) {
 			controllers.UpdateUser(c, logger)
 		})
 

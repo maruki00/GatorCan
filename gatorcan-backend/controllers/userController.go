@@ -142,7 +142,7 @@ func UpdateRoles(c *gin.Context, logger *log.Logger) {
 
 	err := services.UpdateRoles(updateRolesDTO.Username, updateRolesDTO.Roles)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
