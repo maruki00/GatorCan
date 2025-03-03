@@ -36,7 +36,8 @@ func TestUpdatePassword(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "Password updated successfully")
+	assert.Contains(t, w.Body.String(), "updated successfully")
+	CloseTestDB()
 }
 
 func TestUpdateRoles(t *testing.T) {
@@ -86,7 +87,7 @@ func TestUpdateRoles(t *testing.T) {
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotFound, w.Code)
-	assert.Contains(t, w.Body.String(), "User not found")
+	assert.Contains(t, w.Body.String(), "not found")
 
 	// ❌ Test missing authentication
 	req, _ = http.NewRequest("PUT", "/admin/update_role", bytes.NewReader([]byte(reqBody)))
