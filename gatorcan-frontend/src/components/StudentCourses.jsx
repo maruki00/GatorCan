@@ -248,6 +248,7 @@ const CourseCard = ({ course, isEnrolled = false }) => {
         >
           Enroll
         </button>
+          <div></div>
       )}
     </div>
   );
