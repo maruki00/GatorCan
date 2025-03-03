@@ -75,7 +75,7 @@ const Login = () => {
         <form onSubmit={handleSubmit}>
           <Paper elavation={12} style={paperStyle}>
             <Grid align="center">
-              <h2>Login</h2>
+              <h2 data-testid="cypress-title">Login</h2>
             </Grid>
             <Input
               type="text"
