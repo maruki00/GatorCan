@@ -1,3 +1,4 @@
+import React from "react";
 import Grid from "@mui/material/Grid2";
 import Paper from "@mui/material/Paper";
 import Input from "@mui/material/Input";
@@ -115,6 +116,7 @@ const Login = () => {
         </form>
         <p
           ref={errRef}
+          role="alert"
           className={errMsg ? "errmsg" : "offscreen"}
           aria-live="assertive"
           style={errorStyle}
