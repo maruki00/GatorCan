@@ -106,7 +106,6 @@ func CloseTestDB() {
 	database.DB.Exec("DELETE FROM active_courses")
 	database.DB.Exec("DELETE FROM courses")
 	database.DB.Exec("DELETE FROM users")
-=======
 	database.DB.AutoMigrate(&models.User{}) // Create schema
 	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'student');")
 	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'admin');")
