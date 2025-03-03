@@ -50,4 +50,5 @@ func TestGetCoursesPagination(t *testing.T) {
 	assert.NoError(t, err)
 	// Expect the remaining 10 courses on page 2.
 	assert.Equal(t, 10, len(coursesPage2), "Expected 10 courses on page 2")
+	CloseTestDB()
 }

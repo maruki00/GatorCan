@@ -70,7 +70,7 @@ func GetUserDetails(c *gin.Context, logger *log.Logger) {
 	username := c.Param("username")
 	user, err := services.GetUserDetails(username)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		logger.Printf("Error in GetUserDetails service: %v", err)
 		return
 	}
@@ -95,7 +95,7 @@ func DeleteUser(c *gin.Context, logger *log.Logger) {
 
 	err := services.DeleteUser(username)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		logger.Printf("Error in Deleting User: %v", err)
 		return
 	}
@@ -142,7 +142,7 @@ func UpdateRoles(c *gin.Context, logger *log.Logger) {
 
 	err := services.UpdateRoles(updateRolesDTO.Username, updateRolesDTO.Roles)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 

@@ -48,7 +48,7 @@ func TestGetEnrolledCourses(t *testing.T) {
 				"username": "testuser",
 				"password": "testpassword",
 			},
-			token:        generateToken("admin", []string{string(models.Admin)}),
+			token:        generateToken("admin", []string{string(models.Instructor)}),
 			expectedCode: http.StatusForbidden,
 			expectedMsg:  "Unauthorized access",
 		},
@@ -84,4 +84,6 @@ func TestGetEnrolledCourses(t *testing.T) {
 			assert.Contains(t, response["error"], tt.expectedMsg)
 		})
 	}
+
+	CloseTestDB()
 }

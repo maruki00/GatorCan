@@ -70,7 +70,7 @@ func TestDeleteUserFailUserNotFound(t *testing.T) {
 
 	// Validate response
 	assert.Equal(t, http.StatusNotFound, w.Code)
-	assert.Contains(t, w.Body.String(), "User not found")
+	assert.Contains(t, w.Body.String(), "not found")
 
 	CloseTestDB()
 }

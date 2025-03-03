@@ -6,12 +6,12 @@ import (
 	"gatorcan-backend/database"
 	"gatorcan-backend/middleware"
 	"gatorcan-backend/models"
+	"golang.org/x/crypto/bcrypt"
 	"time"
 
 	"gatorcan-backend/utils"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // SetupTestRouter initializes a test Gin router
@@ -33,7 +33,7 @@ func SetupTestRouter() *gin.Engine {
 		adminGroup.DELETE("/:username", func(c *gin.Context) {
 			controllers.DeleteUser(c, logger)
 		})
-		adminGroup.DELETE("/update_role", func(c *gin.Context) {
+		adminGroup.PUT("/update_role", func(c *gin.Context) {
 			controllers.UpdateRoles(c, logger)
 		})
 
@@ -44,7 +44,7 @@ func SetupTestRouter() *gin.Engine {
 		userGroup.GET("/:username", func(c *gin.Context) {
 			controllers.GetUserDetails(c, logger)
 		})
-		userGroup.GET("/update", func(c *gin.Context) {
+		userGroup.PUT("/update", func(c *gin.Context) {
 			controllers.UpdateUser(c, logger)
 		})
 
@@ -57,7 +57,7 @@ func SetupTestRouter() *gin.Engine {
 		//instructorRoutes.POST("/upload-assignment", UploadAssignmentHandler)
 	}
 	courseGroup := router.Group("/courses")
-	courseGroup.Use(middleware.AuthMiddleware(logger, string(models.Student)))
+	courseGroup.Use(middleware.AuthMiddleware(logger, string(models.Student), string(models.Admin)))
 	{
 		courseGroup.GET("/enrolled", func(c *gin.Context) {
 			controllers.GetEnrolledCourses(c, logger)
@@ -78,42 +78,24 @@ func SetupTestDB() {
 
 	database.Connect()
 	database.DB.AutoMigrate(&models.User{}, &models.Course{}, &models.Enrollment{}, &models.ActiveCourse{}, &models.Role{}) // Create schema
-	database.DB.Exec("insert into roles (created_at, updated_at, name)values(datetime(),datetime(),'student');")
-	database.DB.Exec("insert into roles (created_at, updated_at, name)values(datetime(),datetime(),'admin');")
-	database.DB.Exec("insert into roles (created_at, updated_at, name)values(datetime(),datetime(),'instructor');")
+	database.DB.Exec("INSERT INTO roles (created_at, updated_at, name) SELECT datetime(), datetime(), 'student' WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name='student');")
+	database.DB.Exec("INSERT INTO roles (created_at, updated_at, name) SELECT datetime(), datetime(), 'admin' WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name='admin');")
+	database.DB.Exec("INSERT INTO roles (created_at, updated_at, name) SELECT datetime(), datetime(), 'instructor' WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name='instructor');")
 	database.DB.Exec("insert into users (created_at, updated_at, username, email, password) values(datetime(),datetime(),'instructor', 'instructor@admin.com', '$2y$10$StNLKLEww2O7qiArA/BCmu4gf4RKht6rq19y91YLHcMSlSCv7uGbm');")
 	database.DB.Exec("insert into users (created_at, updated_at, username, email, password) values(datetime(),datetime(),'student', 'student@admin.com', '$2y$10$StNLKLEww2O7qiArA/BCmu4gf4RKht6rq19y91YLHcMSlSCv7uGbm');")
 	database.DB.Exec("insert into users (created_at, updated_at, username, email, password) values(datetime(),datetime(),'admin', 'admin@admin.com', '$2y$10$StNLKLEww2O7qiArA/BCmu4gf4RKht6rq19y91YLHcMSlSCv7uGbm');")
 	database.DB.Exec("insert into user_roles (role_id, user_id)values(1,2);")
 	database.DB.Exec("insert into user_roles (role_id, user_id)values(2,3);")
 	database.DB.Exec("insert into user_roles (role_id, user_id)values(3,1);")
-	database.DB.Exec("insert into courses (created_at, updated_at, name, description)values(datetime(),datetime(),'ADS', 'a course');")
-	database.DB.Exec("insert into courses (created_at, updated_at, name, description)values(datetime(),datetime(),'Data science', 'the course');")
-	database.DB.Exec("insert into courses (created_at, updated_at, name, description)values(datetime(),datetime(),'SE', 'course');")
-	database.DB.Exec("insert into active_courses (instructor_id, course_id, start_date, end_date, created_at, updated_at)values(1, 1, datetime(), datetime(), datetime(), datetime());")
-	database.DB.Exec("insert into active_courses (instructor_id, course_id, start_date, end_date, created_at, updated_at)values(1, 2, datetime(), datetime(), datetime(), datetime());")
+	// database.DB.Exec("insert into courses (created_at, updated_at, name, description)values(datetime(),datetime(),'ADS', 'a course');")
+	// database.DB.Exec("insert into courses (created_at, updated_at, name, description)values(datetime(),datetime(),'Data science', 'the course');")
+	// database.DB.Exec("insert into courses (created_at, updated_at, name, description)values(datetime(),datetime(),'SE', 'course');")
+	database.DB.Exec("insert into active_courses (instructor_id, course_id, start_date, end_date, capacity, created_at, updated_at) values(1, 1, datetime(), datetime(), 30, datetime(), datetime());")
+	database.DB.Exec("insert into active_courses (instructor_id, course_id, start_date, end_date, capacity, created_at, updated_at) values(1, 2, datetime(), datetime(), 30, datetime(), datetime());")
 	database.DB.Exec("insert into enrollments (user_id, active_course_id, status, enrollment_date, approval_date)values(2,1, 'approved', datetime(), datetime());")
 	database.DB.Exec("insert into enrollments (user_id, active_course_id, status, enrollment_date, approval_date)values(2,2, 'approved', datetime(), datetime());")
 	// database.DB.Exec("DELETE FROM users") // Clear users table
 	// database.DB.Exec("DELETE FROM roles") // Clear roles table
-}
-
-func CloseTestDB() {
-	database.DB.Exec("update sqlite_sequence set seq = 0")
-	database.DB.Exec("DELETE FROM enrollments")
-	database.DB.Exec("DELETE FROM user_roles")
-	database.DB.Exec("DELETE FROM roles")
-	database.DB.Exec("DELETE FROM active_courses")
-	database.DB.Exec("DELETE FROM courses")
-	database.DB.Exec("DELETE FROM users")
-	database.DB.AutoMigrate(&models.User{}) // Create schema
-	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'student');")
-	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'admin');")
-	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'instructor');")
-	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'teaching_assistant');")
-	database.DB.Exec("DELETE FROM users") // Clear users table
-	database.DB.Exec("DELETE FROM roles") // Clear roles table
-
 	instructor := models.User{
 		Username: "testinstructor",
 		Email:    "testinstructor@example.com",
@@ -148,13 +130,13 @@ func CloseTestDB() {
 	}
 
 	studentRole := models.Role{Name: "student"}
-	adminRole := models.Role{Name: "admin"}
-	if err := database.DB.Create(&studentRole).Error; err != nil {
-		fmt.Printf("Failed to create 'student' role: %v", err)
-	}
-	if err := database.DB.Create(&adminRole).Error; err != nil {
-		fmt.Printf("Failed to create 'admin' role: %v", err)
-	}
+	// adminRole := models.Role{Name: "admin"}
+	// if err := database.DB.Create(&studentRole).Error; err != nil {
+	// 	fmt.Printf("Failed to create 'student' role: %v", err)
+	// }
+	// if err := database.DB.Create(&adminRole).Error; err != nil {
+	// 	fmt.Printf("Failed to create 'admin' role: %v", err)
+	// }
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	if err != nil {
@@ -171,4 +153,14 @@ func CloseTestDB() {
 		fmt.Printf("Failed to create test user: %v\n", err)
 
 	}
+}
+
+func CloseTestDB() {
+	database.DB.Exec("update sqlite_sequence set seq = 0")
+	database.DB.Exec("DELETE FROM enrollments")
+	database.DB.Exec("DELETE FROM user_roles")
+	database.DB.Exec("DELETE FROM roles")
+	database.DB.Exec("DELETE FROM active_courses")
+	database.DB.Exec("DELETE FROM courses")
+	database.DB.Exec("DELETE FROM users")
 }

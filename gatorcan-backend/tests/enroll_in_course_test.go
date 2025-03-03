@@ -110,4 +110,6 @@ func TestEnrollUser(t *testing.T) {
 
 	// Should return an unauthorized status
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+	CloseTestDB()
 }
