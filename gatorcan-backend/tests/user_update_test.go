@@ -95,4 +95,6 @@ func TestUpdateRoles(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, w.Body.String(), "Authorization token required")
+
+	CloseTestDB()
 }

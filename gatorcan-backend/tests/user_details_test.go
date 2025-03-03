@@ -2,6 +2,7 @@ package tests
 
 import (
 	"encoding/json"
+	"fmt"
 	"gatorcan-backend/database"
 	"gatorcan-backend/models"
 	"gatorcan-backend/utils"
@@ -17,18 +18,19 @@ func TestGetUserDetailsSuccess(t *testing.T) {
 	SetupTestDB()
 	router := SetupTestRouter()
 
-	// Insert a test role into the database
-	userRole := models.Role{Name: "user"}
-	database.DB.Create(&userRole) // Ensure the role exists in DB
-
-	// Insert a test user with the role
+	var studentRole models.Role
+	if err := database.DB.Where("name = ?", "student").First(&studentRole).Error; err != nil {
+		t.Fatalf("Failed to fetch student role: %v", err)
+	}
 	adminToken, _ := utils.GenerateToken("adminuser", []string{"admin"})
+	password, _ := utils.HashPassword("testpassword")
 	testUser := models.User{
 		Username: "testuser",
 		Email:    "testuser@example.com",
-		Password: "hashedpassword",
-		Roles:    []*models.Role{&userRole}, // Assign role correctly
+		Password: password,
+		Roles:    []*models.Role{&studentRole}, // Assign role correctly
 	}
+	fmt.Println(testUser.Roles[0].Name)
 	database.DB.Create(&testUser)
 
 	// Request for user details with valid token
@@ -39,33 +41,24 @@ func TestGetUserDetailsSuccess(t *testing.T) {
 	// Validate response
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	// Decode response
-	var response map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &response)
+	var response models.User
+	json.Unmarshal([]byte(w.Body.String()), &response)
 
 	// Assertions
-	assert.Equal(t, "testuser", response["username"])
-	assert.Equal(t, "testuser@example.com", response["email"])
+	assert.Equal(t, "testuser", response.Username)
+	assert.Equal(t, "testuser@example.com", response.Email)
 
-	// Ensure roles are correctly formatted
-	roles, ok := response["roles"].([]interface{})
-	assert.True(t, ok, "Roles should be a list")
+	roles := response.Roles
 
 	// Extract role names safely
 	var roleNames []string
 	for _, role := range roles {
-		switch v := role.(type) {
-		case string:
-			roleNames = append(roleNames, v)
-		case map[string]interface{}:
-			if name, exists := v["name"].(string); exists {
-				roleNames = append(roleNames, name)
-			}
-		}
+		roleNames = append(roleNames, role.Name)
 	}
 
 	// Validate that the role "user" exists in the list
-	assert.Contains(t, roleNames, "user", "Expected role 'user' in response")
+	assert.Contains(t, studentRole.Name, "student", "Expected role 'student' in response")
+	CloseTestDB()
 }
 
 // TestGetUserDetailsFailUnauthorized tests unauthorized access when no token is provided
@@ -81,6 +74,7 @@ func TestGetUserDetailsFailUnauthorized(t *testing.T) {
 	// Validate response
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, w.Body.String(), "Authorization token required")
+	CloseTestDB()
 }
 
 // TestGetUserDetailsFailUserNotFound tests when the requested user is not found
@@ -101,4 +95,6 @@ func TestGetUserDetailsFailUserNotFound(t *testing.T) {
 	// Validate response
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.Contains(t, w.Body.String(), "User not found")
+
+	CloseTestDB()
 }

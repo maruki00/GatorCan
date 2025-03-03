@@ -16,7 +16,7 @@ func TestDeleteUserSuccess(t *testing.T) {
 	router := SetupTestRouter()
 
 	// Insert a test user into the database
-	adminToken, _ := utils.GenerateToken("adminuser", []string{"admin"})
+	adminToken, _ := utils.GenerateToken("admin", []string{"admin"})
 	var userRole models.Role
 	testUser := models.User{
 		Username: "testuser",
@@ -50,6 +50,8 @@ func TestDeleteUserFailUnauthorized(t *testing.T) {
 	// Validate response
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, w.Body.String(), "Authorization token required")
+
+	CloseTestDB()
 }
 
 func TestDeleteUserFailUserNotFound(t *testing.T) {
@@ -69,4 +71,6 @@ func TestDeleteUserFailUserNotFound(t *testing.T) {
 	// Validate response
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.Contains(t, w.Body.String(), "User not found")
+
+	CloseTestDB()
 }

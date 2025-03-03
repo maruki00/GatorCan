@@ -32,8 +32,8 @@ func TestAdminAccess(t *testing.T) {
 
 	t.Run("CreateUser as Admin", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		reqBody := bytes.NewBufferString(`{"username":"testuser","email":"testuser@example.com","password":"password123","roles":["student"]}`)
-		req, _ := http.NewRequest("POST", "/user/add_user", reqBody)
+		reqBody := bytes.NewBufferString(`{"username":"testuser1","email":"testuser1@example.com","password":"password123","roles":["student"]}`)
+		req, _ := http.NewRequest("POST", "/admin/add_user", reqBody)
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		router.ServeHTTP(w, req)
 
@@ -42,7 +42,7 @@ func TestAdminAccess(t *testing.T) {
 
 	t.Run("GetUserDetails as Admin", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/user/testuser", nil)
+		req, _ := http.NewRequest("GET", "/user/testuser1", nil)
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		router.ServeHTTP(w, req)
 
@@ -51,7 +51,7 @@ func TestAdminAccess(t *testing.T) {
 
 	t.Run("DeleteUser as Admin", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("DELETE", "/user/testuser", nil)
+		req, _ := http.NewRequest("DELETE", "/admin/testuser1", nil)
 		req.Header.Set("Authorization", "Bearer "+adminToken)
 		router.ServeHTTP(w, req)
 
@@ -75,7 +75,7 @@ func TestInstructorAccess(t *testing.T) {
 
 	t.Run("Access Admin Route as Instructor", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("POST", "/user/add_user", nil)
+		req, _ := http.NewRequest("POST", "/admin/add_user", nil)
 		req.Header.Set("Authorization", "Bearer "+instructorToken)
 		router.ServeHTTP(w, req)
 
@@ -88,7 +88,7 @@ func TestUnauthorizedAccess(t *testing.T) {
 
 	t.Run("Access Admin Route without Token", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("POST", "/user/add_user", nil)
+		req, _ := http.NewRequest("POST", "/admin/add_user", nil)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
@@ -101,4 +101,6 @@ func TestUnauthorizedAccess(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
+
+	CloseTestDB()
 }
