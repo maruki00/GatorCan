@@ -39,7 +39,7 @@ func SetupTestRouter() *gin.Engine {
 
 	}
 	userGroup := router.Group("/user")
-	userGroup.Use(middleware.AuthMiddleware(logger, string(models.Student)))
+	userGroup.Use(middleware.AuthMiddleware(logger, string(models.Student), string(models.Admin)))
 	{
 		userGroup.GET("/:username", func(c *gin.Context) {
 			controllers.GetUserDetails(c, logger)
@@ -56,7 +56,6 @@ func SetupTestRouter() *gin.Engine {
 	{
 		//instructorRoutes.POST("/upload-assignment", UploadAssignmentHandler)
 	}
-
 	courseGroup := router.Group("/courses")
 	courseGroup.Use(middleware.AuthMiddleware(logger, string(models.Student)))
 	{
@@ -78,6 +77,35 @@ func SetupTestRouter() *gin.Engine {
 func SetupTestDB() {
 
 	database.Connect()
+	database.DB.AutoMigrate(&models.User{}, &models.Course{}, &models.Enrollment{}, &models.ActiveCourse{}, &models.Role{}) // Create schema
+	database.DB.Exec("insert into roles (created_at, updated_at, name)values(datetime(),datetime(),'student');")
+	database.DB.Exec("insert into roles (created_at, updated_at, name)values(datetime(),datetime(),'admin');")
+	database.DB.Exec("insert into roles (created_at, updated_at, name)values(datetime(),datetime(),'instructor');")
+	database.DB.Exec("insert into users (created_at, updated_at, username, email, password) values(datetime(),datetime(),'instructor', 'instructor@admin.com', '$2y$10$StNLKLEww2O7qiArA/BCmu4gf4RKht6rq19y91YLHcMSlSCv7uGbm');")
+	database.DB.Exec("insert into users (created_at, updated_at, username, email, password) values(datetime(),datetime(),'student', 'student@admin.com', '$2y$10$StNLKLEww2O7qiArA/BCmu4gf4RKht6rq19y91YLHcMSlSCv7uGbm');")
+	database.DB.Exec("insert into users (created_at, updated_at, username, email, password) values(datetime(),datetime(),'admin', 'admin@admin.com', '$2y$10$StNLKLEww2O7qiArA/BCmu4gf4RKht6rq19y91YLHcMSlSCv7uGbm');")
+	database.DB.Exec("insert into user_roles (role_id, user_id)values(1,2);")
+	database.DB.Exec("insert into user_roles (role_id, user_id)values(2,3);")
+	database.DB.Exec("insert into user_roles (role_id, user_id)values(3,1);")
+	database.DB.Exec("insert into courses (created_at, updated_at, name, description)values(datetime(),datetime(),'ADS', 'a course');")
+	database.DB.Exec("insert into courses (created_at, updated_at, name, description)values(datetime(),datetime(),'Data science', 'the course');")
+	database.DB.Exec("insert into courses (created_at, updated_at, name, description)values(datetime(),datetime(),'SE', 'course');")
+	database.DB.Exec("insert into active_courses (instructor_id, course_id, start_date, end_date, created_at, updated_at)values(1, 1, datetime(), datetime(), datetime(), datetime());")
+	database.DB.Exec("insert into active_courses (instructor_id, course_id, start_date, end_date, created_at, updated_at)values(1, 2, datetime(), datetime(), datetime(), datetime());")
+	database.DB.Exec("insert into enrollments (user_id, active_course_id, status, enrollment_date, approval_date)values(2,1, 'approved', datetime(), datetime());")
+	database.DB.Exec("insert into enrollments (user_id, active_course_id, status, enrollment_date, approval_date)values(2,2, 'approved', datetime(), datetime());")
+	// database.DB.Exec("DELETE FROM users") // Clear users table
+	// database.DB.Exec("DELETE FROM roles") // Clear roles table
+}
+
+func CloseTestDB() {
+	database.DB.Exec("update sqlite_sequence set seq = 0")
+	database.DB.Exec("DELETE FROM enrollments")
+	database.DB.Exec("DELETE FROM user_roles")
+	database.DB.Exec("DELETE FROM roles")
+	database.DB.Exec("DELETE FROM active_courses")
+	database.DB.Exec("DELETE FROM courses")
+	database.DB.Exec("DELETE FROM users")
 	database.DB.AutoMigrate(&models.User{}) // Create schema
 	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'student');")
 	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'admin');")

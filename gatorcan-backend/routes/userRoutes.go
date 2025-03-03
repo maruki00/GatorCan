@@ -32,7 +32,7 @@ func UserRoutes(router *gin.Engine, logger *log.Logger) {
 
 	}
 	userGroup := router.Group("/user")
-	userGroup.Use(middleware.AuthMiddleware(logger, string(models.Student)))
+	userGroup.Use(middleware.AuthMiddleware(logger, string(models.Student), string(models.Admin)))
 	{
 		userGroup.GET("/:username", func(c *gin.Context) {
 			controllers.GetUserDetails(c, logger)
