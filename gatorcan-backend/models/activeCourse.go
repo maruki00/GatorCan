@@ -1,8 +1,9 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // ActiveCourse represents a course that is currently being taught.
@@ -17,6 +18,8 @@ type ActiveCourse struct {
 	IsActive     bool      `gorm:"default:true"`
 	Instructor   User      `gorm:"foreignKey:InstructorID"`
 	Course       Course    `gorm:"foreignKey:CourseID"`
+	Capacity     int       `gorm:"not null" json:"capacity"`
+	Enrolled     int       `gorm:"default:0" json:"enrolled"`
 }
 
 func (c *ActiveCourse) Create(db *gorm.DB) error {

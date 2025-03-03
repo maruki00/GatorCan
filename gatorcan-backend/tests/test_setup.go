@@ -1,13 +1,17 @@
 package tests
 
 import (
+	"fmt"
 	"gatorcan-backend/controllers"
 	"gatorcan-backend/database"
 	"gatorcan-backend/middleware"
 	"gatorcan-backend/models"
+	"time"
 
 	"gatorcan-backend/utils"
+
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // SetupTestRouter initializes a test Gin router
@@ -23,16 +27,26 @@ func SetupTestRouter() *gin.Engine {
 	adminGroup := router.Group("/admin")
 	adminGroup.Use(middleware.AuthMiddleware(logger, string(models.Admin)))
 	{
-		adminGroup.POST("/add_user", controllers.CreateUser)
-		adminGroup.DELETE("/:username", controllers.DeleteUser)
-		adminGroup.PUT("/update_role", controllers.UpdateRoles)
+		adminGroup.POST("/add_user", func(c *gin.Context) {
+			controllers.CreateUser(c, logger)
+		})
+		adminGroup.DELETE("/:username", func(c *gin.Context) {
+			controllers.DeleteUser(c, logger)
+		})
+		adminGroup.DELETE("/update_role", func(c *gin.Context) {
+			controllers.UpdateRoles(c, logger)
+		})
 
 	}
 	userGroup := router.Group("/user")
 	userGroup.Use(middleware.AuthMiddleware(logger, string(models.Student)))
 	{
-		userGroup.GET("/:username", controllers.GetUserDetails)
-		userGroup.PUT("/update", controllers.UpdateUser)
+		userGroup.GET("/:username", func(c *gin.Context) {
+			controllers.GetUserDetails(c, logger)
+		})
+		userGroup.GET("/update", func(c *gin.Context) {
+			controllers.UpdateUser(c, logger)
+		})
 
 	}
 
@@ -41,6 +55,21 @@ func SetupTestRouter() *gin.Engine {
 	instructorRoutes.Use(middleware.AuthMiddleware(logger, string(models.Instructor)))
 	{
 		//instructorRoutes.POST("/upload-assignment", UploadAssignmentHandler)
+	}
+
+	courseGroup := router.Group("/courses")
+	courseGroup.Use(middleware.AuthMiddleware(logger, string(models.Student)))
+	{
+		courseGroup.GET("/enrolled", func(c *gin.Context) {
+			controllers.GetEnrolledCourses(c, logger)
+		})
+		//courseGroup.POST("/enroll", controllers.EnrollCourse)
+		courseGroup.GET("/", func(c *gin.Context) {
+			controllers.GetCourses(c, logger)
+		})
+		courseGroup.POST("/enroll", func(c *gin.Context) {
+			controllers.EnrollInCourse(c, logger)
+		})
 	}
 	return router
 }
@@ -56,4 +85,62 @@ func SetupTestDB() {
 	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'teaching_assistant');")
 	database.DB.Exec("DELETE FROM users") // Clear users table
 	database.DB.Exec("DELETE FROM roles") // Clear roles table
+
+	instructor := models.User{
+		Username: "testinstructor",
+		Email:    "testinstructor@example.com",
+		Password: "password123",
+	}
+	if err := database.DB.Create(&instructor).Error; err != nil {
+		fmt.Printf("Failed to create instructor user: %v\n", err)
+	}
+
+	for i := 1; i <= 30; i++ {
+
+		course := models.Course{
+			Name:        fmt.Sprintf("Course %d", i),
+			Description: fmt.Sprintf("Description for course %d", i),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now().AddDate(0, 1, 0), // Ends in 1 month
+		}
+		database.DB.Create(&course)
+		// Insert into Active Courses
+		activeCourse := models.ActiveCourse{
+			InstructorID: instructor.ID,
+			CourseID:     course.ID,
+			StartDate:    time.Now(),
+			EndDate:      time.Now().AddDate(0, 1, 0), // Ends in 1 month
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+			IsActive:     true,
+			Capacity:     50 + i, // Random capacity values
+			Enrolled:     0,
+		}
+		database.DB.Create(&activeCourse)
+	}
+
+	studentRole := models.Role{Name: "student"}
+	adminRole := models.Role{Name: "admin"}
+	if err := database.DB.Create(&studentRole).Error; err != nil {
+		fmt.Printf("Failed to create 'student' role: %v", err)
+	}
+	if err := database.DB.Create(&adminRole).Error; err != nil {
+		fmt.Printf("Failed to create 'admin' role: %v", err)
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	if err != nil {
+		fmt.Printf("Failed to hash password: %v", err)
+	}
+
+	testUser := models.User{
+		Username: "teststudent",
+		Email:    "teststudent@example.com",
+		Password: string(hashedPassword),
+		Roles:    []*models.Role{&studentRole}, // Assign "student" role
+	}
+	if err := database.DB.Create(&testUser).Error; err != nil {
+		fmt.Printf("Failed to create test user: %v\n", err)
+
+	}
 }
