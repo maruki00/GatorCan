@@ -7,6 +7,10 @@ import AdminDashboard from "./components/AdminDashboard";
 import StudentDashboard from "./components/StudentDashboard";
 import InstructorDashboard from "./components/InstructorDashboard";
 import UserRegistration from "./components/UserRegistration";
+import StudentCalendar from "./components/StudentCalendar";
+import StudentInbox from "./components/StudentInbox";
+import StudentProfile from "./components/StudentProfile";
+import StudentCourses from "./components/StudentCourses";
 
 import "./App.css";
 
@@ -47,6 +51,42 @@ function App() {
         element={
           <ProtectedDashboard allowedRoles={["admin"]}>
             <UserRegistration />
+          </ProtectedDashboard>
+        }
+      />
+
+      <Route
+        path="student-profile"
+        element={
+          <ProtectedDashboard allowedRoles={["student"]}>
+            <StudentProfile />
+          </ProtectedDashboard>
+        }
+      />
+
+      <Route
+        path="student-calendar"
+        element={
+          <ProtectedDashboard allowedRoles={["student"]}>
+            <StudentCalendar />
+          </ProtectedDashboard>
+        }
+      />
+
+      <Route
+        path="student-inbox"
+        element={
+          <ProtectedDashboard allowedRoles={["student"]}>
+            <StudentInbox />
+          </ProtectedDashboard>
+        }
+      />
+
+      <Route
+        path="student-courses"
+        element={
+          <ProtectedDashboard allowedRoles={["student"]}>
+            <StudentCourses />
           </ProtectedDashboard>
         }
       />
