@@ -29,7 +29,7 @@ func SetupTestRouter() *gin.Engine {
 
 	}
 	userGroup := router.Group("/user")
-	userGroup.Use(middleware.AuthMiddleware(logger, string(models.Student)))
+	userGroup.Use(middleware.AuthMiddleware(logger, string(models.Student), string(models.Admin)))
 	{
 		userGroup.GET("/:username", controllers.GetUserDetails)
 		userGroup.PUT("/update", controllers.UpdateUser)
@@ -80,6 +80,7 @@ func SetupTestDB() {
 }
 
 func CloseTestDB() {
+	database.DB.Exec("update sqlite_sequence set seq = 0")
 	database.DB.Exec("DELETE FROM enrollments")
 	database.DB.Exec("DELETE FROM user_roles")
 	database.DB.Exec("DELETE FROM roles")
