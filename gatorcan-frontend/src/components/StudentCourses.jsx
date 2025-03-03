@@ -33,7 +33,6 @@ function StudentCourses() {
       loadEnrolledCourses();
     }
   };
-
   return (
     <>
       <StudentNavbar />
@@ -102,6 +101,7 @@ function StudentCourses() {
 }
 
 const CourseCard = ({ course, enrollInCourse, isEnrolled = false }) => {
+const CourseCard = ({ course, isEnrolled = false }) => {
   return (
     <div
       style={{
@@ -175,6 +175,11 @@ const CourseCard = ({ course, enrollInCourse, isEnrolled = false }) => {
         >
           Enroll
         </button>
+          onClick={() => null}
+        >
+          Enroll
+        </button>
+          <div></div>
       )}
     </div>
   );
