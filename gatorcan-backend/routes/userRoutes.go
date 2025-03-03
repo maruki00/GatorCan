@@ -26,7 +26,7 @@ func UserRoutes(router *gin.Engine, logger *log.Logger) {
 		adminGroup.DELETE("/:username", func(c *gin.Context) {
 			controllers.DeleteUser(c, logger)
 		})
-		adminGroup.DELETE("/update_role", func(c *gin.Context) {
+		adminGroup.POST("/update_role", func(c *gin.Context) {
 			controllers.UpdateRoles(c, logger)
 		})
 

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	dtos "gatorcan-backend/DTOs"
 	"gatorcan-backend/database"
 	"gatorcan-backend/models"
 )
@@ -9,7 +10,7 @@ type UserRepository interface {
 	GetUserByUsername(username string) (*models.User, error)
 	GetUserByID(id uint) (*models.User, error)
 	GetUserByUsernameorEmail(username string, email string) (*models.User, error)
-	CreateNewUser(username string, email string, password string, roles []*models.Role) (*models.User, error)
+	CreateNewUser(userDTO *dtos.UserCreateDTO) (*models.User, error)
 	DeleteUser(user *models.User) error
 	UpdateUser(user *models.User) error
 	UpdateUserRoles(user *models.User, roles []*models.Role) error
@@ -49,19 +50,19 @@ func (r *userRepository) GetUserByUsernameorEmail(username string, email string)
 	return &user, err
 }
 
-func (r *userRepository) CreateNewUser(username string, email string, password string, roles []*models.Role) (*models.User, error) {
-	var user models.User
+func (r *userRepository) CreateNewUser(userDTO *dtos.UserCreateDTO) (*models.User, error) {
 	newUser := models.User{
-		Username: username,
-		Email:    email,
-		Password: password,
-		Roles:    roles,
+		Username: userDTO.Username,
+		Email:    userDTO.Email,
+		Password: userDTO.Password,
+		Roles:    userDTO.Roles,
 	}
-	err := database.DB.Create(&newUser).Error
-	if err != nil {
+
+	if err := database.DB.Create(&newUser).Error; err != nil {
 		return nil, err
 	}
-	return &user, nil
+
+	return &newUser, nil
 }
 
 func (r *userRepository) DeleteUser(user *models.User) error {

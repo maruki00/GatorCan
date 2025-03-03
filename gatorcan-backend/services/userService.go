@@ -12,6 +12,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var userRepo = repositories.NewUserRepository()
+
 func Login(loginData *dtos.LoginRequestDTO) (*dtos.LoginResponseDTO, error) {
 	var response dtos.LoginResponseDTO
 	var user *models.User
@@ -66,7 +68,7 @@ func Login(loginData *dtos.LoginRequestDTO) (*dtos.LoginResponseDTO, error) {
 
 func CreateUser(userData *dtos.UserRequestDTO) (*dtos.UserResponseDTO, error) {
 	var response dtos.UserResponseDTO
-	userRepo := repositories.NewUserRepository()
+
 	roleRepo := repositories.NewRolesRepository()
 
 	existingUser, err := userRepo.GetUserByUsernameorEmail(userData.Username, userData.Email)
@@ -108,8 +110,18 @@ func CreateUser(userData *dtos.UserRequestDTO) (*dtos.UserResponseDTO, error) {
 	for _, role := range newUserRoles {
 		newUserRolesPtrs = append(newUserRolesPtrs, &role)
 	}
+
+	// Prepare DTO for user creation
+	userCreateDTO := &dtos.UserCreateDTO{
+		Username: userData.Username,
+		Email:    userData.Email,
+		Password: hashedPassword,
+		Roles:    newUserRolesPtrs, // Already a slice of `models.Role`
+	}
+
 	// Create new user
-	_, err = userRepo.CreateNewUser(userData.Username, userData.Email, hashedPassword, newUserRolesPtrs)
+	_, err = userRepo.CreateNewUser(userCreateDTO)
+	// Create new user
 	if err != nil {
 		response.Code = http.StatusInternalServerError
 		response.Message = "Failed to create user"
@@ -124,7 +136,7 @@ func CreateUser(userData *dtos.UserRequestDTO) (*dtos.UserResponseDTO, error) {
 }
 
 func GetUserDetails(username string) (*models.User, error) {
-	userRepo := repositories.NewUserRepository()
+
 	user, err := userRepo.GetUserByUsername(username)
 	if err != nil {
 		return nil, err
@@ -133,7 +145,7 @@ func GetUserDetails(username string) (*models.User, error) {
 }
 
 func DeleteUser(username string) error {
-	userRepo := repositories.NewUserRepository()
+
 	user, err := userRepo.GetUserByUsername(username)
 	if err != nil {
 		return err
@@ -146,7 +158,6 @@ func DeleteUser(username string) error {
 }
 
 func UpdateUser(username string, updateData *dtos.UpdateUserDTO) error {
-	userRepo := repositories.NewUserRepository()
 
 	user, err := userRepo.GetUserByUsername(username)
 	if err != nil {
@@ -172,7 +183,7 @@ func UpdateUser(username string, updateData *dtos.UpdateUserDTO) error {
 }
 
 func UpdateRoles(username string, roles []string) error {
-	userRepo := repositories.NewUserRepository()
+
 	roleRepo := repositories.NewRolesRepository()
 
 	// Fetch user

@@ -1,6 +1,9 @@
 package dtos
 
-import "time"
+import (
+	"gatorcan-backend/models"
+	"time"
+)
 
 type EnrolledCoursesResponseDTO struct {
 	Name            string
@@ -16,8 +19,23 @@ type CourseResponseDTO struct {
 	ID          uint      `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	StartDate   time.Time `json:"start_date"`
-	EndDate     time.Time `json:"end_date"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// Convert model courses to DTOs
+func ConvertToCourseResponseDTOs(courses []models.Course) []CourseResponseDTO {
+	courseResponseDTOs := make([]CourseResponseDTO, len(courses))
+	for i, course := range courses {
+		courseResponseDTOs[i] = CourseResponseDTO{
+			ID:          course.ID,
+			Name:        course.Name,
+			Description: course.Description,
+			CreatedAt:   course.CreatedAt,
+			UpdatedAt:   course.UpdatedAt,
+		}
+	}
+	return courseResponseDTOs
 }
 
 type EnrollRequestDTO struct {

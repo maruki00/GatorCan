@@ -85,19 +85,38 @@ func SetupTestDB() {
 	database.DB.Exec("insert into roles (created_at, updated_At, name) values(datetime('now'),datetime('now'),'teaching_assistant');")
 	database.DB.Exec("DELETE FROM users") // Clear users table
 	database.DB.Exec("DELETE FROM roles") // Clear roles table
+
+	instructor := models.User{
+		Username: "testinstructor",
+		Email:    "testinstructor@example.com",
+		Password: "password123",
+	}
+	if err := database.DB.Create(&instructor).Error; err != nil {
+		fmt.Printf("Failed to create instructor user: %v\n", err)
+	}
+
 	for i := 1; i <= 30; i++ {
-		capacity := 50 + i // Example: Capacity varies between 51-80
-		enrollmentCount := 0
 
 		course := models.Course{
 			Name:        fmt.Sprintf("Course %d", i),
 			Description: fmt.Sprintf("Description for course %d", i),
-			StartDate:   time.Now(),
-			EndDate:     time.Now().AddDate(0, 1, 0), // Ends in 1 month
-			Capacity:    capacity,
-			Enrolled:    enrollmentCount,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now().AddDate(0, 1, 0), // Ends in 1 month
 		}
 		database.DB.Create(&course)
+		// Insert into Active Courses
+		activeCourse := models.ActiveCourse{
+			InstructorID: instructor.ID,
+			CourseID:     course.ID,
+			StartDate:    time.Now(),
+			EndDate:      time.Now().AddDate(0, 1, 0), // Ends in 1 month
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+			IsActive:     true,
+			Capacity:     50 + i, // Random capacity values
+			Enrolled:     0,
+		}
+		database.DB.Create(&activeCourse)
 	}
 
 	studentRole := models.Role{Name: "student"}

@@ -10,7 +10,7 @@ import (
 type CourseRepository interface {
 	GetEnrolledCourses(userID int) ([]models.Enrollment, error)
 	GetCourses(page, pageSize int) ([]models.Course, error)
-	GetCourseByID(courseID int) (models.Course, error)
+	GetCourseByID(courseID int) (models.ActiveCourse, error)
 	RequestEnrollment(userID, activeCourseID uint) error
 	ApproveEnrollment(enrollmentID uint) error
 	RejectEnrollment(enrollmentID uint) error
@@ -33,11 +33,11 @@ func (r *courseRepository) GetEnrolledCourses(userID int) ([]models.Enrollment, 
 	return enrollments, nil
 }
 
-func (r *courseRepository) GetCourseByID(courseID int) (models.Course, error) {
-	var course models.Course
+func (r *courseRepository) GetCourseByID(courseID int) (models.ActiveCourse, error) {
+	var course models.ActiveCourse
 	// Fetch course from courses table without loading related ActiveCourse
 	if err := database.DB.First(&course, courseID).Error; err != nil {
-		return models.Course{}, errors.New("course not found")
+		return models.ActiveCourse{}, errors.New("course not found")
 	}
 
 	return course, nil
