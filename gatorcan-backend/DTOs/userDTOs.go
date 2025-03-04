@@ -21,3 +21,8 @@ type UserCreateDTO struct {
 	Password string         `json:"password"`
 	Roles    []*models.Role `json:"roles"`
 }
+
+type ResponseDTO struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
