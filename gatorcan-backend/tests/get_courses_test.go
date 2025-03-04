@@ -2,6 +2,7 @@ package tests
 
 import (
 	"encoding/json"
+	"gatorcan-backend/models"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,7 +11,17 @@ import (
 	"gatorcan-backend/utils"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
+
+type MockCourseRepository struct {
+	mock.Mock
+}
+
+func (m *MockCourseRepository) GetCourses(page int, pageSize int) ([]models.Course, error) {
+	args := m.Called(page, pageSize)
+	return args.Get(0).([]models.Course), args.Error(1)
+}
 
 // TestGetCoursesPagination tests the GetCourses endpoint with pagination.
 func TestGetCoursesPagination(t *testing.T) {
