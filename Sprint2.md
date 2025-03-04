@@ -34,6 +34,30 @@ Build the course management system with admin-controlled enrollment approval and
 - **Why:** To allow students to view their enrolled courses.
 - **What:** Implement `GET /courses/enrolled` to fetch only courses that the user is enrolled in.
 
+#### **✅ Unit Tests and Functional tests for Backend (Mohamamd and Muthu)**
+##### Each of the test file covers all related functionalities
+##### Unit Tests
+- courseController -> Mocking courseService
+    tests the controller functions like getCourse, getEnrolledCourse etc while integrated with the mocked service.
+- userController -> Mocking userService
+    tests the controller functions like getUserDetails, login, updateUserDetails etc while integrated with the mocked service.
+- userService -> Mocking userRepository, courseRepository
+    tests the user service functions for implemented business logic for the functions like getUserDetails, login, updateUserDetails etc while integrated with the mocked reporsitories.
+- courseService -> Mocking userRepository, courseRepository
+    tests the course service functions for implemented business logic for the functions like getCourse, getEnrolledCourse etc while integrated with the mocked reporsitories.
+##### Functonal Tests
+- get enrolled courses
+- enroll in_course
+- get courses
+- role based_access
+- user deletion
+- user details
+- user login
+- user registration
+- user update
+
+** Tested using positive, Negative and edge test cases.
+
 ---
 
 ### **🔹 Frontend (Navnit & Harsh)**
@@ -58,6 +82,36 @@ Build the course management system with admin-controlled enrollment approval and
 - **Why:** To connect UI components with backend functionality.
 - **What:** Implement API calls to `GET /courses` and `GET /courses/enrolled` to dynamically populate the UI.
 
+#### **✅ Unit Tests and Cypress Test for Frontend (Harsh and Navnit)**
+Cypress tests:
+- fetch and validate login page
+- validate the components in the login page
+- pass in creds and click on login button
+- fetch and validate dashboard page
+
+Unit Tests:
+- Login:
+    1. Check if username and password are rendered correctly 
+    2. Check if we are able to change username and password correctly 
+    3. Check if we get an error message on passing invalid credentials 
+- AdminDashboard:
+    1. Check if add user tool renders correctly 
+- StudentCourses:
+    1. Check if enrolled courses and all courses heading is rendered properly 
+    2. Check if after fetch all courses API runs (mock), it loads the courses onto the courses tab
+    3. Check if "No enrolled courses" text renders if there are no courses enrolled by the student 
+- StudentNavbar:
+    1. Check if all Navbar components are rendered such as Profile, Calendar etc 
+- AdminDashboard:
+    1. Check if mock add user API gives correct success or failure responses
+- AuthService:
+    1. Check if mock login API gives correct success or failure response, and if local storage is updated with refresh token correctly 
+- CourseService:
+    1. Check if fetch all courses API gives correct success or failure responses.
+- UserNavigation:
+    1. Check if all elements are rendered correctly 
+    2. Check if mock add user API gives correct display message on success or failure
+
 ---
 
 ## ⚙️ **Sprint 2 - Issues & Completion Status**
@@ -80,6 +134,7 @@ By the end of Sprint 2, we have:
 - ✅ Course listing and enrollment UI
 - ✅ Weekly schedule UI displaying enrolled courses and instructors
 - ✅ Backend-frontend API integration
+- ✅ Unit tests and Cypress tests for backend and frontend
 
 ---
 
