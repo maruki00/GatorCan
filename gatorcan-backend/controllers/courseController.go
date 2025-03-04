@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	dtos "gatorcan-backend/DTOs"
+	"gatorcan-backend/repositories"
 	"gatorcan-backend/services"
 	"log"
 	"net/http"
@@ -11,7 +12,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func GetCoursesService() *services.CourseService {
+	Repo := repositories.NewCourseRepository()
+	courseService := services.NewCourseService(Repo)
+	return courseService
+}
 func GetEnrolledCourses(c *gin.Context, logger *log.Logger) {
+	courseService := GetCoursesService()
+
 	// Get username from JWT token
 	username, exists := c.Get("username")
 	if !exists {
@@ -19,7 +27,7 @@ func GetEnrolledCourses(c *gin.Context, logger *log.Logger) {
 		return
 	}
 
-	enrollments, err := services.GetEnrolledCourses(logger, username.(string))
+	enrollments, err := courseService.GetEnrolledCourses(logger, username.(string))
 	if err == errors.New("user not found") {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -33,6 +41,7 @@ func GetEnrolledCourses(c *gin.Context, logger *log.Logger) {
 }
 
 func GetCourses(c *gin.Context, logger *log.Logger) {
+	courseService := GetCoursesService()
 
 	username, exists := c.Get("username")
 	if !exists {
@@ -53,7 +62,7 @@ func GetCourses(c *gin.Context, logger *log.Logger) {
 	}
 
 	// Call the service layer to fetch courses
-	courses, err := services.GetCourses(logger, username.(string), page, pageSize)
+	courses, err := courseService.GetCourses(logger, username.(string), page, pageSize)
 	if err != nil {
 		logger.Printf("Failed to fetch courses for page %d with pageSize %d: %v", page, pageSize, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch courses"})
