@@ -1,32 +1,29 @@
 package database
 
 import (
-	"fmt"
-	"log"
-
-	"gatorcan-backend/models"
-
+	"gatorcan-backend/config"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-var DB *gorm.DB
+// Connect establishes a connection to the database
+func Connect(config config.DatabaseConfig) (*gorm.DB, error) {
+	// dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+	// 	config.Host, config.Port, config.User, config.Password, config.DBName, config.SSLMode)
 
-func Connect() {
-	var err error
-	fmt.Println("Connecting to the database...")
+	db, err := gorm.Open(sqlite.Open("file:e-learning.db"), &gorm.Config{}, &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 
-	DB, err = gorm.Open(sqlite.Open("file:e-learning.db"), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		return nil, err
 	}
 
-	log.Println("SQLite database connected successfully")
+	return db, nil
+}
 
-	err = DB.AutoMigrate(&models.User{}, &models.Course{}, &models.Enrollment{}, &models.ActiveCourse{}, &models.Role{})
-	if err != nil {
-		log.Fatalf("Failed to migrate database: %v", err)
-	}
-
-	log.Println("Database migration completed successfully")
+// Migrate performs database schema migration
+func Migrate(db *gorm.DB, models ...interface{}) error {
+	return db.AutoMigrate(models...)
 }

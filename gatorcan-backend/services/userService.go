@@ -1,25 +1,49 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	dtos "gatorcan-backend/DTOs"
+	"gatorcan-backend/config"
+	"gatorcan-backend/interfaces"
 	"gatorcan-backend/models"
-	"gatorcan-backend/repositories"
 	"gatorcan-backend/utils"
 	"net/http"
 
 	"gorm.io/gorm"
 )
 
-var userRepo = repositories.NewUserRepository()
+type UserServiceImpl struct {
+	courseRepo interfaces.CourseRepository
+	userRepo   interfaces.UserRepository
+	roleRepo   interfaces.RoleRepository
+	config     *config.AppConfig
+	httpClient interfaces.HTTPClient
+}
 
-func Login(loginData *dtos.LoginRequestDTO) (*dtos.LoginResponseDTO, error) {
+func NewUserService(
+	courseRepo interfaces.CourseRepository,
+	userRepo interfaces.UserRepository,
+	roleRepo interfaces.RoleRepository,
+	config *config.AppConfig,
+	httpClient interfaces.HTTPClient,
+) interfaces.UserService {
+	return &UserServiceImpl{
+		courseRepo: courseRepo,
+		userRepo:   userRepo,
+		roleRepo:   roleRepo,
+		config:     config,
+		httpClient: httpClient,
+	}
+}
+
+func (s *UserServiceImpl) Login(ctx context.Context, loginData *dtos.LoginRequestDTO) (*dtos.LoginResponseDTO, error) {
 	var response dtos.LoginResponseDTO
 	var user *models.User
 
 	// get user from the database
-	user, err := repositories.NewUserRepository().GetUserByUsername(loginData.Username)
+	user, err := s.userRepo.GetUserByUsername(ctx, loginData.Username)
 	if err != nil {
 		response.Code = http.StatusNotFound
 		response.Message = "Invalid_username"
@@ -66,12 +90,12 @@ func Login(loginData *dtos.LoginRequestDTO) (*dtos.LoginResponseDTO, error) {
 	return &response, nil
 }
 
-func CreateUser(userData *dtos.UserRequestDTO) (*dtos.UserResponseDTO, error) {
+func (s *UserServiceImpl) CreateUser(ctx context.Context, userData *dtos.UserRequestDTO) (*dtos.UserResponseDTO, error) {
 	var response dtos.UserResponseDTO
 
-	roleRepo := repositories.NewRolesRepository()
+	//roleRepo := repositories.NewRolesRepository()
 
-	existingUser, err := userRepo.GetUserByUsernameorEmail(userData.Username, userData.Email)
+	existingUser, err := s.userRepo.GetUserByUsernameorEmail(ctx, userData.Username, userData.Email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			existingUser = nil
@@ -98,7 +122,7 @@ func CreateUser(userData *dtos.UserRequestDTO) (*dtos.UserResponseDTO, error) {
 	}
 
 	// Fetch roles from database
-	newUserRoles, err := roleRepo.GetRolesByName(userData.Roles)
+	newUserRoles, err := s.roleRepo.GetRolesByName(ctx, userData.Roles)
 	if err != nil {
 		response.Code = http.StatusBadRequest
 		response.Message = "One or more roles not found"
@@ -120,7 +144,7 @@ func CreateUser(userData *dtos.UserRequestDTO) (*dtos.UserResponseDTO, error) {
 	}
 
 	// Create new user
-	_, err = userRepo.CreateNewUser(userCreateDTO)
+	_, err = s.userRepo.CreateNewUser(ctx, userCreateDTO)
 	// Create new user
 	if err != nil {
 		response.Code = http.StatusInternalServerError
@@ -135,31 +159,31 @@ func CreateUser(userData *dtos.UserRequestDTO) (*dtos.UserResponseDTO, error) {
 	return &response, nil
 }
 
-func GetUserDetails(username string) (*models.User, error) {
+func (s *UserServiceImpl) GetUserDetails(ctx context.Context, username string) (*models.User, error) {
 
-	user, err := userRepo.GetUserByUsername(username)
+	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-func DeleteUser(username string) error {
+func (s *UserServiceImpl) DeleteUser(ctx context.Context, username string) error {
 
-	user, err := userRepo.GetUserByUsername(username)
+	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
 		return err
 	}
-	err = userRepo.DeleteUser(user)
+	err = s.userRepo.DeleteUser(ctx, user)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpdateUser(username string, updateData *dtos.UpdateUserDTO) error {
+func (s *UserServiceImpl) UpdateUser(ctx context.Context, username string, updateData *dtos.UpdateUserDTO) error {
 
-	user, err := userRepo.GetUserByUsername(username)
+	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
 		return err
 	}
@@ -174,7 +198,7 @@ func UpdateUser(username string, updateData *dtos.UpdateUserDTO) error {
 	}
 	user.Password = hashedPassword
 
-	err = userRepo.UpdateUser(user)
+	err = s.userRepo.UpdateUser(ctx, user)
 	if err != nil {
 		return err
 	}
@@ -182,18 +206,18 @@ func UpdateUser(username string, updateData *dtos.UpdateUserDTO) error {
 	return nil
 }
 
-func UpdateRoles(username string, roles []string) error {
+func (s *UserServiceImpl) UpdateRoles(ctx context.Context, username string, roles []string) error {
 
-	roleRepo := repositories.NewRolesRepository()
+	// roleRepo := repositories.NewRolesRepository()
 
 	// Fetch user
-	user, err := userRepo.GetUserByUsername(username)
+	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
 		return err
 	}
 
 	// Fetch roles in a single query
-	newRoles, err := roleRepo.GetRolesByName(roles)
+	newRoles, err := s.roleRepo.GetRolesByName(ctx, roles)
 	if err != nil {
 		return err
 	}
@@ -221,7 +245,7 @@ func UpdateRoles(username string, roles []string) error {
 		user.Roles[i] = &newRoles[i]
 	}
 
-	err = userRepo.UpdateUser(user)
+	err = s.userRepo.UpdateUser(ctx, user)
 	if err != nil {
 		return err
 	}
