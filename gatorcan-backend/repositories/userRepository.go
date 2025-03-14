@@ -14,6 +14,7 @@ type UserRepository interface {
 	DeleteUser(user *models.User) error
 	UpdateUser(user *models.User) error
 	UpdateUserRoles(user *models.User, roles []*models.Role) error
+	CreateAssignment(path string, user_id uint) error
 }
 
 type userRepository struct {
@@ -86,5 +87,17 @@ func (r *userRepository) UpdateUserRoles(user *models.User, roles []*models.Role
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r *userRepository) CreateAssignment(path string, user_id uint) error {
+
+	if err := database.DB.Create(&models.UserAssignment{
+		Path:   path,
+		UserId: user_id,
+	}).Error; err != nil {
+		return err
+	}
+
 	return nil
 }

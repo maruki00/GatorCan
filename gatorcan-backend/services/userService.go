@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	dtos "gatorcan-backend/DTOs"
@@ -8,6 +9,7 @@ import (
 	"gatorcan-backend/repositories"
 	"gatorcan-backend/utils"
 	"net/http"
+	"os"
 
 	"gorm.io/gorm"
 )
@@ -225,5 +227,27 @@ func UpdateRoles(username string, roles []string) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func UploadAssignments(dst string, user_id uint) error {
+
+	S3, err := utils.NewS3()
+	if err != nil {
+		return fmt.Errorf("could not create s3 object")
+	}
+	info, _ := os.Stat(dst)
+
+	fmt.Println(dst)
+	err = S3.UploadFile(context.TODO(), info.Name(), dst, "text/plain", true)
+	if err != nil {
+		return fmt.Errorf("could not upload the file, %s", err.Error())
+	}
+	userRepo := repositories.NewUserRepository()
+
+	if err := userRepo.CreateAssignment(dst, user_id); err != nil {
+		return fmt.Errorf("could not create file meta data")
+	}
+
 	return nil
 }

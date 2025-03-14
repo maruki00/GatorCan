@@ -41,6 +41,10 @@ func UserRoutes(router *gin.Engine, logger *log.Logger) {
 			controllers.UpdateUser(c, logger)
 		})
 
+		userGroup.POST("/assignments/upload", func(c *gin.Context) {
+			controllers.UploadAssignments(c, logger)
+		})
+
 	}
 
 	// Instructor-only Routes
@@ -65,4 +69,5 @@ func UserRoutes(router *gin.Engine, logger *log.Logger) {
 			controllers.EnrollInCourse(c, logger)
 		})
 	}
+
 }
