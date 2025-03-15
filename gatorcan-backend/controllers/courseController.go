@@ -1,33 +1,53 @@
 package controllers
 
 import (
+	"context"
 	"errors"
 	dtos "gatorcan-backend/DTOs"
-	"gatorcan-backend/repositories"
-	"gatorcan-backend/services"
+	"gatorcan-backend/interfaces"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-func GetCoursesService() *services.CourseService {
-	Repo := repositories.NewCourseRepository()
-	courseService := services.NewCourseService(Repo)
-	return courseService
+type CourseController struct {
+	courseService interfaces.CourseService
+	logger        *log.Logger
 }
-func GetEnrolledCourses(c *gin.Context, logger *log.Logger) {
-	courseService := GetCoursesService()
+
+func NewCourseController(service interfaces.CourseService, logger *log.Logger) *CourseController {
+	return &CourseController{
+		courseService: service,
+		logger:        logger,
+	}
+}
+
+//	func (cc *CourseController) GetCoursesService() *services.CourseService {
+//		Repo := repositories.NewCourseRepository()
+//		courseService := services.NewCourseService(Repo)
+//		return courseService
+//	}
+func (cc *CourseController) GetEnrolledCourses(c *gin.Context) {
+	cc.logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	//courseService := GetCoursesService()
 
 	// Get username from JWT token
 	username, exists := c.Get("username")
 	if !exists {
+		cc.logger.Printf("Unauthorized access attempt to enrolled courses")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	enrollments, err := courseService.GetEnrolledCourses(logger, username.(string))
+	enrollments, err := cc.courseService.GetEnrolledCourses(ctx, cc.logger, username.(string))
 	if err == errors.New("user not found") {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -40,11 +60,17 @@ func GetEnrolledCourses(c *gin.Context, logger *log.Logger) {
 	c.JSON(http.StatusOK, enrollments)
 }
 
-func GetCourses(c *gin.Context, logger *log.Logger) {
-	courseService := GetCoursesService()
+func (cc *CourseController) GetCourses(c *gin.Context) {
+	cc.logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	//courseService := GetCoursesService()
 
 	username, exists := c.Get("username")
 	if !exists {
+		cc.logger.Printf("Unauthorized access attempt to courses")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
@@ -62,9 +88,9 @@ func GetCourses(c *gin.Context, logger *log.Logger) {
 	}
 
 	// Call the service layer to fetch courses
-	courses, err := courseService.GetCourses(logger, username.(string), page, pageSize)
+	courses, err := cc.courseService.GetCourses(ctx, cc.logger, username.(string), page, pageSize)
 	if err != nil {
-		logger.Printf("Failed to fetch courses for page %d with pageSize %d: %v", page, pageSize, err)
+		cc.logger.Printf("Failed to fetch courses for page %d with pageSize %d: %v", page, pageSize, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch courses"})
 		return
 	}
@@ -73,7 +99,13 @@ func GetCourses(c *gin.Context, logger *log.Logger) {
 	c.JSON(http.StatusOK, courses)
 }
 
-func EnrollInCourse(c *gin.Context, logger *log.Logger) {
+func (cc *CourseController) EnrollInCourse(c *gin.Context) {
+	cc.logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
 	username, exists := c.Get("username")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -93,7 +125,7 @@ func EnrollInCourse(c *gin.Context, logger *log.Logger) {
 		return
 	}
 
-	err := services.EnrollUser(logger, username.(string), courseID)
+	err := cc.courseService.EnrollUser(ctx, cc.logger, username.(string), courseID)
 	if err == errors.New("user not found") {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return

@@ -9,11 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UserRoutes(router *gin.Engine, logger *log.Logger) {
+func UserRoutes(userController *controllers.UserController, courseController *controllers.CourseController, router *gin.Engine, logger *log.Logger) {
 
 	//  Public Routes
 	router.POST("/login", func(c *gin.Context) {
-		controllers.Login(c, logger)
+		userController.Login(c, logger)
 	})
 
 	// Admin-only Routes
@@ -21,13 +21,13 @@ func UserRoutes(router *gin.Engine, logger *log.Logger) {
 	adminGroup.Use(middleware.AuthMiddleware(logger, string(models.Admin)))
 	{
 		adminGroup.POST("/add_user", func(c *gin.Context) {
-			controllers.CreateUser(c, logger)
+			userController.CreateUser(c, logger)
 		})
 		adminGroup.DELETE("/:username", func(c *gin.Context) {
-			controllers.DeleteUser(c, logger)
+			userController.DeleteUser(c, logger)
 		})
 		adminGroup.PUT("/update_role", func(c *gin.Context) {
-			controllers.UpdateRoles(c, logger)
+			userController.UpdateRoles(c, logger)
 		})
 
 	}
@@ -35,10 +35,10 @@ func UserRoutes(router *gin.Engine, logger *log.Logger) {
 	userGroup.Use(middleware.AuthMiddleware(logger, string(models.Student), string(models.Admin)))
 	{
 		userGroup.GET("/:username", func(c *gin.Context) {
-			controllers.GetUserDetails(c, logger)
+			userController.GetUserDetails(c, logger)
 		})
 		userGroup.PUT("/update", func(c *gin.Context) {
-			controllers.UpdateUser(c, logger)
+			userController.UpdateUser(c, logger)
 		})
 
 		userGroup.POST("/assignments/upload", func(c *gin.Context) {
@@ -58,15 +58,15 @@ func UserRoutes(router *gin.Engine, logger *log.Logger) {
 	courseGroup.Use(middleware.AuthMiddleware(logger, string(models.Student), string(models.Admin)))
 	{
 		courseGroup.GET("/enrolled", func(c *gin.Context) {
-			controllers.GetEnrolledCourses(c, logger)
+			courseController.GetEnrolledCourses(c)
 		})
 		//courseGroup.POST("/enroll", controllers.EnrollCourse)
 		courseGroup.GET("/", func(c *gin.Context) {
-			controllers.GetCourses(c, logger)
+			courseController.GetCourses(c)
 		})
 
 		courseGroup.POST("/enroll", func(c *gin.Context) {
-			controllers.EnrollInCourse(c, logger)
+			courseController.EnrollInCourse(c)
 		})
 	}
 

@@ -1,24 +1,29 @@
 package repositories
 
 import (
-	"gatorcan-backend/database"
+	"context"
 	"gatorcan-backend/models"
+
+	"gorm.io/gorm"
 )
 
 type RoleRepository interface {
-	GetRolesByName(roleNames []string) ([]models.Role, error)
+	GetRolesByName(ctx context.Context, roleNames []string) ([]models.Role, error)
 }
 
 type roleRepository struct {
+	db *gorm.DB
 }
 
-func NewRolesRepository() RoleRepository {
-	return &roleRepository{}
+func NewRoleRepository(db *gorm.DB) RoleRepository {
+	return &roleRepository{db: db}
 }
 
-func (r *roleRepository) GetRolesByName(roleNames []string) ([]models.Role, error) {
+func (r *roleRepository) GetRolesByName(ctx context.Context, roleNames []string) ([]models.Role, error) {
 	var roles []models.Role
-	err := database.DB.Where("name IN ?", roleNames).Find(&roles).Error
+	err := r.db.WithContext(ctx).
+		Where("name IN ?", roleNames).
+		Find(&roles).Error
 	if err != nil {
 		return nil, err
 	}

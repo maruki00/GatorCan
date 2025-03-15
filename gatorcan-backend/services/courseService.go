@@ -2,38 +2,53 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	dtos "gatorcan-backend/DTOs"
+	"gatorcan-backend/config"
+	"gatorcan-backend/interfaces"
 	"gatorcan-backend/models"
-	"gatorcan-backend/repositories"
 	"log"
 	"net/http"
 	"time"
 )
 
-type CourseRepository interface {
-	GetCourses(page int, pageSize int) ([]models.Course, error)
+// type CourseRepository interface {
+// 	GetCourses(page int, pageSize int) ([]models.Course, error)
+// }
+
+type CourseServiceImpl struct {
+	courseRepo interfaces.CourseRepository
+	userRepo   interfaces.UserRepository
+	config     *config.AppConfig
+	httpClient interfaces.HTTPClient
 }
 
-type CourseService struct {
-	repo CourseRepository
+func NewCourseService(
+	courseRepo interfaces.CourseRepository,
+	userRepo interfaces.UserRepository,
+	config *config.AppConfig,
+	httpClient interfaces.HTTPClient,
+) interfaces.CourseService {
+	return &CourseServiceImpl{
+		courseRepo: courseRepo,
+		userRepo:   userRepo,
+		config:     config,
+		httpClient: httpClient,
+	}
 }
 
-func NewCourseService(repo CourseRepository) *CourseService {
-	return &CourseService{repo: repo}
-}
+func (s *CourseServiceImpl) GetEnrolledCourses(ctx context.Context, logger *log.Logger, username string) ([]dtos.EnrolledCoursesResponseDTO, error) {
 
-func (s *CourseService) GetEnrolledCourses(logger *log.Logger, username string) ([]dtos.EnrolledCoursesResponseDTO, error) {
-
-	user, err := repositories.NewUserRepository().GetUserByUsername(username)
+	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
 		logger.Printf("user not found: %s %d", username, 404)
 		return nil, errors.New("user not found")
 	}
 
-	enrollments, err := repositories.NewCourseRepository().GetEnrolledCourses(int(user.ID))
+	enrollments, err := s.courseRepo.GetEnrolledCourses(ctx, int(user.ID))
 	if err != nil {
 		logger.Printf("failed to fetch enrolled courses: %s %d", username, 500)
 		return nil, errors.New("failed to fetch enrolled courses")
@@ -48,7 +63,7 @@ func (s *CourseService) GetEnrolledCourses(logger *log.Logger, username string) 
 		course.StartDate = enrollment.ActiveCourse.StartDate
 		course.EndDate = enrollment.ActiveCourse.EndDate
 		var instructor *models.User
-		instructor, err = repositories.NewUserRepository().GetUserByID(enrollment.ActiveCourse.InstructorID)
+		instructor, err = s.userRepo.GetUserByID(ctx, enrollment.ActiveCourse.InstructorID)
 		course.InstructorName = instructor.Username
 		course.InstructorEmail = instructor.Email
 		enrolledCourses = append(enrolledCourses, course)
@@ -57,15 +72,15 @@ func (s *CourseService) GetEnrolledCourses(logger *log.Logger, username string) 
 	return enrolledCourses, nil
 }
 
-func (s *CourseService) GetCourses(logger *log.Logger, username string, page int, pageSize int) ([]dtos.CourseResponseDTO, error) {
-	_, err := repositories.NewUserRepository().GetUserByUsername(username)
+func (s *CourseServiceImpl) GetCourses(ctx context.Context, logger *log.Logger, username string, page int, pageSize int) ([]dtos.CourseResponseDTO, error) {
+	_, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
 		logger.Printf("user not found: %s %d", username, 404)
 		return nil, errors.New("user not found")
 	}
 
 	// Fetch courses using pagination
-	courses, err := s.repo.GetCourses(page, pageSize)
+	courses, err := s.courseRepo.GetCourses(ctx, page, pageSize)
 	if err != nil {
 		logger.Printf("Failed to fetch courses for page %d with pageSize %d: %v", page, pageSize, err)
 		return nil, errors.New("failed to fetch courses")
@@ -75,21 +90,21 @@ func (s *CourseService) GetCourses(logger *log.Logger, username string, page int
 	return dtos.ConvertToCourseResponseDTOs(courses), nil
 }
 
-func EnrollUser(logger *log.Logger, username string, courseID int) error {
+func (s *CourseServiceImpl) EnrollUser(ctx context.Context, logger *log.Logger, username string, courseID int) error {
 
-	user, err := repositories.NewUserRepository().GetUserByUsername(username)
+	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
 		logger.Printf("user not found: %s %d", username, 404)
 		return errors.New("user not found")
 	}
-	course, err := repositories.NewCourseRepository().GetCourseByID(courseID)
+	course, err := s.courseRepo.GetCourseByID(ctx, courseID)
 	if err != nil {
 		logger.Printf("course not found: %d %d", courseID, 404)
 		return errors.New("course not found")
 	}
 
 	// Check if user is already enrolled
-	enrollments, err := repositories.NewCourseRepository().GetEnrolledCourses(int(user.ID))
+	enrollments, err := s.courseRepo.GetEnrolledCourses(ctx, int(user.ID))
 	if err != nil {
 		logger.Printf("failed to fetch enrolled courses: %s %d", username, 500)
 		return errors.New("failed to fetch enrolled courses")
@@ -113,7 +128,7 @@ func EnrollUser(logger *log.Logger, username string, courseID int) error {
 		return errors.New("course is full")
 	}
 
-	err = repositories.NewCourseRepository().RequestEnrollment(user.ID, course.ID)
+	err = s.courseRepo.RequestEnrollment(ctx, user.ID, course.ID)
 	if err != nil {
 		logger.Printf("failed to request enrollment: %s %d", username, 500)
 		return errors.New("failed to request enrollment")

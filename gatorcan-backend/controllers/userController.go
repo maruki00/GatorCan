@@ -1,19 +1,36 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	dtos "gatorcan-backend/DTOs"
-	"gatorcan-backend/services"
+	"gatorcan-backend/interfaces"
 	"gatorcan-backend/utils"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-func CreateUser(c *gin.Context, logger *log.Logger) {
+type UserController struct {
+	userService interfaces.UserService
+	logger      *log.Logger
+}
+
+func NewUserController(userService interfaces.UserService, logger *log.Logger) *UserController {
+	return &UserController{
+		userService: userService,
+		logger:      logger,
+	}
+}
+
+func (uc *UserController) CreateUser(c *gin.Context, logger *log.Logger) {
 
 	logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 
 	var userRequest *dtos.UserRequestDTO
 
@@ -28,7 +45,7 @@ func CreateUser(c *gin.Context, logger *log.Logger) {
 		return
 	}
 
-	response, err := services.CreateUser(userRequest)
+	response, err := uc.userService.CreateUser(ctx, userRequest)
 	if err != nil {
 		c.JSON(response.Code, gin.H{"error": response.Message})
 		logger.Printf("Error in CreateUser service: %v", err)
@@ -39,9 +56,12 @@ func CreateUser(c *gin.Context, logger *log.Logger) {
 	c.JSON(response.Code, gin.H{"message": response.Message})
 }
 
-func Login(c *gin.Context, logger *log.Logger) {
+func (uc *UserController) Login(c *gin.Context, logger *log.Logger) {
 
 	logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 
 	var loginData *dtos.LoginRequestDTO
 
@@ -51,7 +71,7 @@ func Login(c *gin.Context, logger *log.Logger) {
 		return
 	}
 
-	response, err := services.Login(loginData)
+	response, err := uc.userService.Login(ctx, loginData)
 	if response.Err || err != nil {
 		c.JSON(response.Code, gin.H{"error": response.Message})
 		logger.Printf("Login Service Error: %v %d", err, c.Writer.Status())
@@ -65,10 +85,15 @@ func Login(c *gin.Context, logger *log.Logger) {
 	}
 }
 
-func GetUserDetails(c *gin.Context, logger *log.Logger) {
+func (uc *UserController) GetUserDetails(c *gin.Context, logger *log.Logger) {
 	logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	username := c.Param("username")
-	user, err := services.GetUserDetails(username)
+	user, err := uc.userService.GetUserDetails(ctx, username)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		logger.Printf("Error in GetUserDetails service: %v", err)
@@ -87,13 +112,17 @@ func GetUserDetails(c *gin.Context, logger *log.Logger) {
 	})
 }
 
-func DeleteUser(c *gin.Context, logger *log.Logger) {
+func (uc *UserController) DeleteUser(c *gin.Context, logger *log.Logger) {
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 
 	username := c.Param("username")
 
 	logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
 
-	err := services.DeleteUser(username)
+	err := uc.userService.DeleteUser(ctx, username)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		logger.Printf("Error in Deleting User: %v", err)
@@ -103,7 +132,12 @@ func DeleteUser(c *gin.Context, logger *log.Logger) {
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("User %s has been deleted successfully", username)})
 }
 
-func UpdateUser(c *gin.Context, logger *log.Logger) {
+func (uc *UserController) UpdateUser(c *gin.Context, logger *log.Logger) {
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	var updateData dtos.UpdateUserDTO
 	if err := c.ShouldBindJSON(&updateData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
@@ -122,7 +156,7 @@ func UpdateUser(c *gin.Context, logger *log.Logger) {
 		return
 	}
 
-	err := services.UpdateUser(username, &updateData)
+	err := uc.userService.UpdateUser(ctx, username, &updateData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		logger.Printf("Error in UpdateUser service: %v", err)
@@ -133,14 +167,19 @@ func UpdateUser(c *gin.Context, logger *log.Logger) {
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("User updated successfully: %s", username)})
 }
 
-func UpdateRoles(c *gin.Context, logger *log.Logger) {
+func (uc *UserController) UpdateRoles(c *gin.Context, logger *log.Logger) {
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
 	var updateRolesDTO dtos.UpdateUserRolesDTO
 	if err := c.ShouldBindJSON(&updateRolesDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	err := services.UpdateRoles(updateRolesDTO.Username, updateRolesDTO.Roles)
+	err := uc.userService.UpdateRoles(ctx, updateRolesDTO.Username, updateRolesDTO.Roles)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
