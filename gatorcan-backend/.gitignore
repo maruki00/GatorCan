@@ -3,3 +3,4 @@ go.sum
 *.db
 *.log
 logs/*
+./storage/*

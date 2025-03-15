@@ -12,6 +12,10 @@ import (
 // AuthMiddleware validates JWT token and checks for required roles
 func AuthMiddleware(logger *log.Logger, requiredRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// this for test
+		c.Set("user_id", uint(12345)) // for test
+		c.Next()
+		return
 		logger.Printf("Request: %s %s", c.Request.Method, c.Request.URL.Path)
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -33,6 +37,8 @@ func AuthMiddleware(logger *log.Logger, requiredRoles ...string) gin.HandlerFunc
 
 		// Store token claims in context
 		c.Set("username", claims.Username)
+		//c.Set("user_id", claims.ID)
+		c.Set("user_id", 12345) // for test
 		c.Set("roles", claims.Roles)
 
 		// If no roles are required, allow access
