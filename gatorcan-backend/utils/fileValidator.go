@@ -29,36 +29,51 @@ var allowedExtensions = map[string]bool{
 	".pdf":  true,
 }
 
-func ValidateFile(file multipart.File, header *multipart.FileHeader) (string, error) {
+type FileHeader struct {
+	Name        string
+	Path        string
+	ContentType string
+	Extras      map[string]interface{}
+}
+
+func ValidateFile(file multipart.File, header *multipart.FileHeader) (*FileHeader, error) {
 	if header.Size > MAX_FILE_SIZE {
-		return "", errors.New("file size exceeds the 5MB limit")
+		return nil, errors.New("file size exceeds the 5MB limit")
 	}
 
 	buffer := make([]byte, 512)
 	if _, err := file.Read(buffer); err != nil {
-		return "", errors.New("failed to read file for MIME type detection")
+		return nil, errors.New("failed to read file for MIME type detection")
 	}
 
 	contentType := http.DetectContentType(buffer)
 	if !allowedMimeTypes[contentType] {
-		return "", fmt.Errorf("invalid file type: %s", contentType)
+		return nil, fmt.Errorf("invalid file type: %s", contentType)
 	}
 
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		return "", errors.New("failed to reset file pointer")
+		return nil, errors.New("failed to reset file pointer")
 	}
 
 	ext := strings.ToLower(filepath.Ext(header.Filename))
 	if !allowedExtensions[ext] {
-		return "", fmt.Errorf("invalid file extension: %s", ext)
+		return nil, fmt.Errorf("invalid file extension: %s", ext)
 	}
-	dst := path.Join(os.TempDir(), header.Filename)
+	root, _ := os.Getwd()
+	storagePath := path.Join(root, "storage")
+	os.MkdirAll(storagePath, 0777)
+	dst := path.Join(storagePath, header.Filename)
 	out, err := os.Create(dst)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, file)
-	return dst, err
+	return &FileHeader{
+		Path:        dst,
+		Name:        header.Filename,
+		ContentType: contentType,
+		Extras:      nil,
+	}, err
 }

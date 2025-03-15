@@ -155,14 +155,16 @@ func UploadAssignments(c *gin.Context, logger *log.Logger) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "156 : " + err.Error()})
 		return
 	}
-	dst, err := utils.ValidateFile(file, header)
+	fileHeader, err := utils.ValidateFile(file, header)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "161 : " + err.Error()})
 		return
 	}
 
+	fmt.Println("dst : ", fileHeader.Path)
+
 	userID, _ := c.Get("user_id")
-	if err := services.UploadAssignments(dst, userID.(uint)); err != nil {
+	if err := services.UploadAssignments(fileHeader, userID.(uint)); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "169 : " + err.Error()})
 		return
 	}

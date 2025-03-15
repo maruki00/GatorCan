@@ -230,22 +230,22 @@ func UpdateRoles(username string, roles []string) error {
 	return nil
 }
 
-func UploadAssignments(dst string, user_id uint) error {
+func UploadAssignments(fileHeader *utils.FileHeader, user_id uint) error {
 
 	S3, err := utils.NewS3()
 	if err != nil {
 		return fmt.Errorf("could not create s3 object")
 	}
-	info, _ := os.Stat(dst)
+	info, _ := os.Stat(fileHeader.Path)
 
-	fmt.Println(dst)
-	err = S3.UploadFile(context.TODO(), info.Name(), dst, "text/plain", true)
+	fmt.Println("dst service : ", fileHeader.Path)
+	err = S3.UploadFile(context.TODO(), info.Name(), fileHeader.Path, fileHeader.ContentType, true)
 	if err != nil {
 		return fmt.Errorf("could not upload the file, %s", err.Error())
 	}
 	userRepo := repositories.NewUserRepository()
 
-	if err := userRepo.CreateAssignment(dst, user_id); err != nil {
+	if err := userRepo.CreateAssignment(fileHeader.Path, user_id); err != nil {
 		return fmt.Errorf("could not create file meta data")
 	}
 
